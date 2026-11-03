@@ -1,0 +1,154 @@
+alphabet:
+  - SYN
+  - SYNACK
+  - ACK
+  - DATA
+  - FIN
+  - RST
+
+states:
+  - id: T0
+    name: Init
+    initial: true
+    accepting: false
+  - id: T1
+    name: SynSeen
+    accepting: false
+  - id: T2
+    name: SynAckSeen
+    accepting: false
+  - id: T3
+    name: Established
+    accepting: false
+  - id: T4
+    name: FirstFin
+    accepting: false
+  - id: T5
+    name: SecondFin
+    accepting: false
+  - id: T6
+    name: ClosedClean
+    accepting: true
+  - id: T7
+    name: ClosedReset
+    accepting: true
+  - id: T_dead
+    name: Dead
+    accepting: false
+
+profiles:
+  strict:
+    transitions:
+      - from: T0
+        to: T1
+        event: SYN
+      - from: T1
+        to: T2
+        event: SYNACK
+      - from: T1
+        to: T7
+        event: RST
+      - from: T2
+        to: T3
+        event: ACK
+      - from: T2
+        to: T7
+        event: RST
+      - from: T3
+        to: T3
+        event: ACK
+      - from: T3
+        to: T3
+        event: DATA
+      - from: T3
+        to: T4
+        event: FIN
+      - from: T3
+        to: T7
+        event: RST
+      - from: T4
+        to: T4
+        event: ACK
+      - from: T4
+        to: T4
+        event: DATA
+      - from: T4
+        to: T5
+        event: FIN
+      - from: T4
+        to: T7
+        event: RST
+      - from: T5
+        to: T6
+        event: ACK
+      - from: T5
+        to: T7
+        event: RST
+
+  tolerant:
+    transitions:
+      - from: T0
+        to: T1
+        event: SYN
+      # Repeated SYN in T1
+      - from: T1
+        to: T1
+        event: SYN
+      - from: T1
+        to: T2
+        event: SYNACK
+      - from: T1
+        to: T7
+        event: RST
+      # Repeated SYNACK in T2
+      - from: T2
+        to: T2
+        event: SYNACK
+      - from: T2
+        to: T3
+        event: ACK
+      - from: T2
+        to: T7
+        event: RST
+      - from: T3
+        to: T3
+        event: ACK
+      - from: T3
+        to: T3
+        event: DATA
+      - from: T3
+        to: T4
+        event: FIN
+      - from: T3
+        to: T7
+        event: RST
+      - from: T4
+        to: T4
+        event: ACK
+      - from: T4
+        to: T4
+        event: DATA
+      # Repeated FIN in T4
+      - from: T4
+        to: T4
+        event: FIN
+      - from: T4
+        to: T5
+        event: FIN
+      - from: T4
+        to: T7
+        event: RST
+      # Repeated FIN in T5
+      - from: T5
+        to: T5
+        event: FIN
+      - from: T5
+        to: T6
+        event: ACK
+      - from: T5
+        to: T7
+        event: RST
+      # Trailing ACK in T6
+      - from: T6
+        to: T6
+        event: ACK
