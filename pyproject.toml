@@ -54,6 +54,7 @@ ignore = ["E501", "UP006", "UP035", "UP042", "UP045", "UP017"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["E402"]
+"src/db/migrations/*" = ["E402"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"

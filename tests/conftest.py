@@ -1,10 +1,15 @@
 """Shared pytest fixtures."""
 
-from datetime import datetime, timezone
+import os
 
-import pytest
+# Ensure unit tests use SQLite in-memory database per Doc 08 §3
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-from src.common.types import Event, Trace
+from datetime import datetime, timezone  # noqa: E402
+
+import pytest  # noqa: E402
+
+from src.common.types import Event, Trace  # noqa: E402
 
 
 @pytest.fixture
