@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ps9_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ps9_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ps9_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ps9}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ps9_user} -d ${POSTGRES_DB:-ps9}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    container_name: ps9_api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ps9_user}:${POSTGRES_PASSWORD:-ps9_password}@db:5432/${POSTGRES_DB:-ps9}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_KEY: ${API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8501,http://dashboard:8501}
+      RANDOM_SEED: ${RANDOM_SEED:-0}
+    ports:
+      - "8000:8000"
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    container_name: ps9_dashboard
+    restart: always
+    depends_on:
+      - api
+    environment:
+      API_BASE_URL: http://api:8000/api/v1
+    ports:
+      - "8501:8501"
+
+volumes:
+  pgdata:
