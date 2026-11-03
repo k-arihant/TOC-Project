@@ -1,4 +1,5 @@
 """Tests for automata explanation formatting and DOT generation."""
+
 from pathlib import Path
 
 from src.automata.explain import explain_fsm

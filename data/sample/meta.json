@@ -1,0 +1,31 @@
+{
+  "dataset_name": "sample",
+  "seed": 0,
+  "config_hash": "42b5a3d3f0de5fb1",
+  "generated_at": "2026-11-03T04:14:37.830736+00:00",
+  "n_cases": 500,
+  "n_events": 3807,
+  "class_distribution": {
+    "normal": 322,
+    "valid_variation": 128,
+    "statistical_anomaly": 31,
+    "rule_violation": 19
+  },
+  "split_distribution": {
+    "train": 292,
+    "test": 111,
+    "val": 97
+  },
+  "anomaly_type_distribution": {
+    "none": 450,
+    "slow_gap": 11,
+    "excessive_retries": 10,
+    "burst_fast": 10,
+    "replace_event": 6,
+    "swap_adjacent": 4,
+    "event_after_closed": 4,
+    "skip_event": 2,
+    "insert_random_event": 2,
+    "duplicate_event": 1
+  }
+}

@@ -1,0 +1,94 @@
+seed: 0
+n_cases: 1000
+
+# Path distribution for valid traces
+paths:
+  happy_path: 0.65
+  retry_success: 0.15
+  cancel_before_paid: 0.05
+  cancel_after_paid: 0.05
+  delivered_refund: 0.05
+  other_variation: 0.05
+
+# Log-normal timing parameters per transition
+timing:
+  default_median_sec: 300.0
+  default_sigma: 0.5
+  gaps:
+    OrderCreated_to_PaymentInitiated:
+      median_sec: 60.0
+      sigma: 0.5
+    PaymentInitiated_to_PaymentAuthorized:
+      median_sec: 5.0
+      sigma: 0.3
+    PaymentInitiated_to_PaymentFailed:
+      median_sec: 5.0
+      sigma: 0.3
+    PaymentFailed_to_PaymentInitiated:
+      median_sec: 120.0
+      sigma: 0.6
+    PaymentAuthorized_to_OrderPacked:
+      median_sec: 1800.0
+      sigma: 0.8
+    OrderPacked_to_OrderShipped:
+      median_sec: 7200.0
+      sigma: 0.8
+    OrderShipped_to_OrderDelivered:
+      median_sec: 86400.0
+      sigma: 0.5
+    OrderDelivered_to_OrderClosed:
+      median_sec: 172800.0
+      sigma: 0.5
+    Created_to_OrderCancelled:
+      median_sec: 300.0
+      sigma: 0.8
+    PaymentFailed_to_OrderCancelled:
+      median_sec: 180.0
+      sigma: 0.5
+    Paid_to_OrderCancelled:
+      median_sec: 600.0
+      sigma: 0.6
+    Packed_to_OrderCancelled:
+      median_sec: 900.0
+      sigma: 0.6
+    Cancelled_to_RefundRequested:
+      median_sec: 60.0
+      sigma: 0.4
+    RefundRequested_to_RefundCompleted:
+      median_sec: 43200.0
+      sigma: 0.5
+    RefundCompleted_to_OrderClosed:
+      median_sec: 3600.0
+      sigma: 0.4
+
+# Anomaly injection settings
+anomalies:
+  rate: 0.10
+  rule_violations:
+    skip_event: 0.18
+    swap_adjacent: 0.18
+    duplicate_event: 0.16
+    insert_random_event: 0.16
+    event_after_closed: 0.16
+    replace_event: 0.16
+  statistical_anomalies:
+    excessive_retries:
+      share: 0.35
+      min_failures: 4
+      max_failures: 8
+    slow_gap:
+      share: 0.35
+      multiplier: 20.0
+    burst_fast:
+      share: 0.30
+      compression_factor: 0.01
+
+# Case-level splits
+splits:
+  train: 0.60
+  val: 0.20
+  test: 0.20
+  held_out_rule_types:
+    - event_after_closed
+  held_out_statistical_types:
+    - burst_fast
