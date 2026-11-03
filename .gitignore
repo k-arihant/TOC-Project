@@ -56,6 +56,8 @@ coverage.xml
 *.pkl
 *.joblib
 *.onnx
+artifacts/*
+!artifacts/models/.gitkeep
 
 # Data and PCAP files
 data/raw/*

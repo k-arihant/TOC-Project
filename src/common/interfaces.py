@@ -1,8 +1,9 @@
-from typing import Protocol, Sequence
+from typing import Protocol, Sequence, runtime_checkable
 
 from src.common.types import DetectorScore, Trace
 
 
+@runtime_checkable
 class AnomalyDetector(Protocol):
     name: str
 
