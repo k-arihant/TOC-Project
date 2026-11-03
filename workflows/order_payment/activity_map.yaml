@@ -1,0 +1,45 @@
+# Activity name mappings: Raw / abbreviated / lowercase names to canonical alphabet event names
+mappings:
+  OC: OrderCreated
+  OrderCreated: OrderCreated
+  order_created: OrderCreated
+
+  PI: PaymentInitiated
+  PaymentInitiated: PaymentInitiated
+  payment_initiated: PaymentInitiated
+
+  PA: PaymentAuthorized
+  PaymentAuthorized: PaymentAuthorized
+  payment_authorized: PaymentAuthorized
+
+  PF: PaymentFailed
+  PaymentFailed: PaymentFailed
+  payment_failed: PaymentFailed
+
+  PK: OrderPacked
+  OrderPacked: OrderPacked
+  order_packed: OrderPacked
+
+  SH: OrderShipped
+  OrderShipped: OrderShipped
+  order_shipped: OrderShipped
+
+  DL: OrderDelivered
+  OrderDelivered: OrderDelivered
+  order_delivered: OrderDelivered
+
+  CX: OrderCancelled
+  OrderCancelled: OrderCancelled
+  order_cancelled: OrderCancelled
+
+  RR: RefundRequested
+  RefundRequested: RefundRequested
+  refund_requested: RefundRequested
+
+  RC: RefundCompleted
+  RefundCompleted: RefundCompleted
+  refund_completed: RefundCompleted
+
+  CL: OrderClosed
+  OrderClosed: OrderClosed
+  order_closed: OrderClosed

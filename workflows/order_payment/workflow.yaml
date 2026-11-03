@@ -1,0 +1,142 @@
+name: Online Order & Payment Lifecycle
+version: "1.0.0"
+description: >
+  Formal complete DFA specification for the online order and payment process workflow,
+  supporting normal execution, payment retry loops, cancellations, and returns with refunds.
+
+alphabet:
+  - code: OC
+    name: OrderCreated
+  - code: PI
+    name: PaymentInitiated
+  - code: PA
+    name: PaymentAuthorized
+  - code: PF
+    name: PaymentFailed
+  - code: PK
+    name: OrderPacked
+  - code: SH
+    name: OrderShipped
+  - code: DL
+    name: OrderDelivered
+  - code: CX
+    name: OrderCancelled
+  - code: RR
+    name: RefundRequested
+  - code: RC
+    name: RefundCompleted
+  - code: CL
+    name: OrderClosed
+
+states:
+  - id: S0
+    name: Start
+    initial: true
+    accepting: false
+  - id: S1
+    name: Created
+    accepting: false
+  - id: S2
+    name: PaymentPending
+    accepting: false
+  - id: S3
+    name: PaymentFailed
+    accepting: false
+  - id: S4
+    name: Paid
+    accepting: false
+  - id: S5
+    name: Packed
+    accepting: false
+  - id: S6
+    name: Shipped
+    accepting: false
+  - id: S7
+    name: Delivered
+    accepting: false
+  - id: S8
+    name: CancelledUnpaid
+    accepting: false
+  - id: S9
+    name: CancelledPaid
+    accepting: false
+  - id: S10
+    name: RefundPending
+    accepting: false
+  - id: S11
+    name: Refunded
+    accepting: false
+  - id: S12
+    name: Closed
+    accepting: true
+  - id: S_dead
+    name: Dead
+    accepting: false
+    dead: true
+
+transitions:
+  - from: S0
+    event: OrderCreated
+    to: S1
+
+  - from: S1
+    event: PaymentInitiated
+    to: S2
+  - from: S1
+    event: OrderCancelled
+    to: S8
+
+  - from: S2
+    event: PaymentAuthorized
+    to: S4
+  - from: S2
+    event: PaymentFailed
+    to: S3
+
+  - from: S3
+    event: PaymentInitiated
+    to: S2
+  - from: S3
+    event: OrderCancelled
+    to: S8
+
+  - from: S4
+    event: OrderPacked
+    to: S5
+  - from: S4
+    event: OrderCancelled
+    to: S9
+
+  - from: S5
+    event: OrderShipped
+    to: S6
+  - from: S5
+    event: OrderCancelled
+    to: S9
+
+  - from: S6
+    event: OrderDelivered
+    to: S7
+
+  - from: S7
+    event: RefundRequested
+    to: S10
+  - from: S7
+    event: OrderClosed
+    to: S12
+
+  - from: S8
+    event: OrderClosed
+    to: S12
+
+  - from: S9
+    event: RefundRequested
+    to: S10
+
+  - from: S10
+    event: RefundCompleted
+    to: S11
+
+  - from: S11
+    event: OrderClosed
+    to: S12

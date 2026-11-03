@@ -1,4 +1,5 @@
 """Tests for shared contracts in src.common."""
+
 from datetime import datetime, timezone
 from typing import Sequence
 
