@@ -1,8 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.common.types import FsmResult, HybridDecision
 from src.db.models import (
+    Case,
     DecisionMlEvidence,
     ExplanationModel,
     FsmResultModel,
@@ -87,3 +88,26 @@ class HybridRepository:
     def get_decision_by_case(self, case_pk: int) -> HybridDecisionModel | None:
         stmt = select(HybridDecisionModel).where(HybridDecisionModel.case_pk == case_pk)
         return self.db.scalars(stmt).first()
+
+    def list_decisions(
+        self,
+        dataset_id: int | None = None,
+        final_label: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[HybridDecisionModel], int]:
+        stmt = select(HybridDecisionModel)
+        if dataset_id or final_label:
+            stmt = stmt.join(HybridDecisionModel.case)
+            if dataset_id:
+                stmt = stmt.where(Case.dataset_id == dataset_id)
+            if final_label:
+                stmt = stmt.where(HybridDecisionModel.final_label == final_label)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(count_stmt) or 0
+
+        offset = (page - 1) * page_size
+        stmt = stmt.order_by(HybridDecisionModel.decision_id.desc()).offset(offset).limit(page_size)
+        items = list(self.db.scalars(stmt).all())
+        return items, total

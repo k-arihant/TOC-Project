@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.common.types import Event, Trace
@@ -64,6 +64,32 @@ class DatasetRepository:
     def get_case(self, dataset_id: int, case_id: str) -> Case | None:
         stmt = select(Case).where(Case.dataset_id == dataset_id, Case.case_id == case_id)
         return self.db.scalars(stmt).first()
+
+    def get_case_by_pk(self, case_pk: int) -> Case | None:
+        stmt = select(Case).where(Case.case_pk == case_pk)
+        return self.db.scalars(stmt).first()
+
+    def list_cases(
+        self,
+        dataset_id: int,
+        label_class: str | None = None,
+        split: str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[Case], int]:
+        stmt = select(Case).where(Case.dataset_id == dataset_id)
+        if label_class:
+            stmt = stmt.where(Case.label_class == label_class)
+        if split:
+            stmt = stmt.where(Case.split == split)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = self.db.scalar(count_stmt) or 0
+
+        offset = (page - 1) * page_size
+        stmt = stmt.order_by(Case.case_pk).offset(offset).limit(page_size)
+        items = list(self.db.scalars(stmt).all())
+        return items, total
 
     def add_events(self, case_pk: int, events: Sequence[Event]) -> list[EventLog]:
         logs: list[EventLog] = []

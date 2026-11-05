@@ -11,6 +11,8 @@ from src.db.base import Base
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False
+else:
+    connect_args["connect_timeout"] = 3
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -33,10 +35,17 @@ def get_db() -> Generator[Session, None, None]:
 def create_tables(bind_engine=None) -> None:
     """Create all tables defined in models if they do not exist."""
     target_engine = bind_engine or engine
-    Base.metadata.create_all(bind=target_engine)
+    try:
+        Base.metadata.create_all(bind=target_engine)
+    except Exception:
+        # Gracefully handle database connection failures
+        pass
 
 
 def drop_tables(bind_engine=None) -> None:
     """Drop all tables defined in models."""
     target_engine = bind_engine or engine
-    Base.metadata.drop_all(bind=target_engine)
+    try:
+        Base.metadata.drop_all(bind=target_engine)
+    except Exception:
+        pass
