@@ -5,6 +5,16 @@ Pure API client adhering strictly to Doc 09 and Doc 10.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Ensure repository root is on sys.path
+for _p in Path(__file__).resolve().parents:
+    if (_p / "src").is_dir():
+        if str(_p) not in sys.path:
+            sys.path.insert(0, str(_p))
+        break
+
 import streamlit as st
 
 from src.dashboard.api_client import ApiClient

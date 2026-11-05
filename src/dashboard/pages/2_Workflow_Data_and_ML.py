@@ -6,6 +6,16 @@ Pure API client: generates datasets, views cases, trains detectors, and displays
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Ensure repository root is on sys.path
+for _p in Path(__file__).resolve().parents:
+    if (_p / "src").is_dir():
+        if str(_p) not in sys.path:
+            sys.path.insert(0, str(_p))
+        break
+
 import pandas as pd
 import streamlit as st
 
