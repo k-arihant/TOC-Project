@@ -182,15 +182,15 @@ class ApiClient:
         dataset_id: int,
         detector: str,
         target_fpr: float = 0.05,
-        contamination: Optional[float] = None,
-        hyperparameters: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        seed: int = 0,
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "dataset_id": dataset_id,
             "detector": detector,
             "target_fpr": target_fpr,
-            "contamination": contamination,
-            "hyperparameters": hyperparameters or {},
+            "params": params or {},
+            "seed": seed,
         }
         with httpx.Client(timeout=60.0) as client:
             return self._handle_response(client.post(self._url("/ml/train"), json=payload))
@@ -280,14 +280,12 @@ class ApiClient:
         split: str = "test",
         model_run_ids: Optional[List[int]] = None,
         ml_policy: str = "any",
-        record_in_db: bool = True,
     ) -> Dict[str, Any]:
         payload = {
             "dataset_id": dataset_id,
             "split": split,
             "model_run_ids": model_run_ids or [],
             "ml_policy": ml_policy,
-            "record_in_db": record_in_db,
         }
         with httpx.Client(timeout=60.0) as client:
             return self._handle_response(client.post(self._url("/evaluation/run"), json=payload))

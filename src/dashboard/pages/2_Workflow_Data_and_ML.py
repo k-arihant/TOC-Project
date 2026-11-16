@@ -65,7 +65,7 @@ with tab_manage:
 
             anomaly_rate = st.slider("Anomaly Injection Rate", min_value=0.05, max_value=0.30, value=0.10, step=0.01)
 
-            submit_gen = st.form_submit_button("⚡ Generate Dataset", type="primary", use_container_width=True)
+            submit_gen = st.form_submit_button("⚡ Generate Dataset", type="primary", width="stretch")
             if submit_gen:
                 with st.spinner("Simulating traces, injecting anomalies, and writing to database..."):
                     try:
@@ -93,7 +93,7 @@ with tab_manage:
             events_file = st.file_uploader("Events CSV (`case_id`, `activity`, `timestamp`)", type=["csv"])
             labels_file = st.file_uploader("Optional Labels CSV (`case_id`, `label_class`, `anomaly_type`)", type=["csv"])
 
-            submit_up = st.form_submit_button("⬆️ Upload & Ingest", use_container_width=True)
+            submit_up = st.form_submit_button("⬆️ Upload & Ingest", width="stretch")
             if submit_up:
                 if not events_file:
                     st.warning("Please select an events CSV file.")
@@ -121,7 +121,7 @@ with tab_manage:
         all_ds = api.list_datasets()
         if all_ds:
             df_ds = pd.DataFrame(all_ds)
-            st.dataframe(df_ds, use_container_width=True)
+            st.dataframe(df_ds, width="stretch")
         else:
             st.info("No datasets available in database.")
     except Exception as exc:
@@ -166,7 +166,7 @@ with tab_cases:
 
             if cases_list:
                 df_cases = pd.DataFrame(cases_list)
-                st.dataframe(df_cases, use_container_width=True)
+                st.dataframe(df_cases, width="stretch")
 
                 st.markdown("#### 🔍 Inspect Single Case Events")
                 selected_pk = st.selectbox(
@@ -180,7 +180,7 @@ with tab_cases:
                     events = detail.get("events", [])
                     st.caption(f"Case `{detail.get('case_id')}` | Injected Anomaly Type: `{detail.get('anomaly_type') or 'None'}`")
                     if events:
-                        st.dataframe(pd.DataFrame(events), use_container_width=True)
+                        st.dataframe(pd.DataFrame(events), width="stretch")
             else:
                 st.info("No cases found matching the selected filters.")
 
@@ -230,7 +230,7 @@ with tab_train:
             with col_h2:
                 seed = st.number_input("Model Seed", min_value=0, value=0, step=1)
 
-            submit_train = st.form_submit_button("🚀 Train & Calibrate Model", type="primary", use_container_width=True)
+            submit_train = st.form_submit_button("🚀 Train & Calibrate Model", type="primary", width="stretch")
             if submit_train:
                 with st.spinner(f"Extracting features, fitting {detector_choice}, and calibrating threshold..."):
                     try:
@@ -238,12 +238,14 @@ with tab_train:
                             dataset_id=cur_ds_id,
                             detector=detector_choice,
                             target_fpr=target_fpr,
-                            hyperparameters={"n_estimators": n_est, "random_state": seed},
+                            params={"n_estimators": n_est},
+                            seed=seed,
                         )
+                        thr_val = trained.get("threshold", trained.get("threshold_calibrated", 0.0))
                         st.success(
                             f"Model #{trained['model_run_id']} trained! "
-                            f"Calibrated Threshold: `{trained.get('threshold_calibrated', 0.0):.4f}` "
-                            f"(Validation FPR: `{trained.get('val_fpr', 0.0):.2%}`)"
+                            f"Calibrated Threshold: `{thr_val:.4f}` "
+                            f"(Trained on `{trained.get('n_train_cases', 0)}` normal cases)"
                         )
                         st.rerun()
                     except ApiClientError as err:
@@ -263,13 +265,13 @@ with tab_models:
             st.info("No trained models found for this dataset. Train one in the **Train & Calibrate Detectors** tab.")
         else:
             df_m = pd.DataFrame(models)
-            st.dataframe(df_m, use_container_width=True)
+            st.dataframe(df_m, width="stretch")
 
             selected_mid = st.selectbox(
                 "Choose Model Run to Inspect:",
                 options=[m["model_run_id"] for m in models],
                 format_func=lambda mid: next(
-                    f"Run #{mid} | Detector: {m['detector']} | Calibrated Threshold: {m.get('threshold_calibrated', 0.0):.3f}"
+                    f"Run #{mid} | Detector: {m['detector']} | Threshold: {m.get('threshold', m.get('threshold_calibrated', 0.0)):.3f}"
                     for m in models if m["model_run_id"] == mid
                 ),
             )
@@ -282,7 +284,7 @@ with tab_models:
                 pr_auc = m_detail.get("pr_auc")
                 normal_scores = m_detail.get("normal_scores", [])
                 anomaly_scores = m_detail.get("anomaly_scores", [])
-                threshold = m_detail.get("threshold_calibrated")
+                threshold = m_detail.get("threshold", m_detail.get("threshold_calibrated"))
 
                 col_a1, col_a2 = st.columns(2)
                 col_a1.metric("ROC AUC", f"{roc_auc:.3f}" if roc_auc else "N/A")

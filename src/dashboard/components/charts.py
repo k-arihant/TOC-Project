@@ -61,7 +61,7 @@ def render_score_histogram(
         margin=dict(l=40, r=40, t=50, b=40),
         height=380,
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def render_roc_pr_curves(
@@ -104,7 +104,7 @@ def render_roc_pr_curves(
             height=360,
             margin=dict(l=40, r=40, t=50, b=40),
         )
-        st.plotly_chart(fig_roc, use_container_width=True)
+        st.plotly_chart(fig_roc, width="stretch")
 
     with col2:
         fig_pr = go.Figure()
@@ -127,7 +127,7 @@ def render_roc_pr_curves(
             height=360,
             margin=dict(l=40, r=40, t=50, b=40),
         )
-        st.plotly_chart(fig_pr, use_container_width=True)
+        st.plotly_chart(fig_pr, width="stretch")
 
 
 def render_confusion_matrix(
@@ -173,7 +173,7 @@ def render_confusion_matrix(
         height=320,
         margin=dict(l=40, r=40, t=50, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def render_benchmark_comparison_bar(
@@ -220,7 +220,7 @@ def render_benchmark_comparison_bar(
         height=400,
         margin=dict(l=40, r=40, t=50, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def render_recall_by_anomaly_type(
@@ -258,4 +258,4 @@ def render_recall_by_anomaly_type(
         height=400,
         margin=dict(l=40, r=40, t=50, b=40),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")

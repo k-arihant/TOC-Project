@@ -79,6 +79,14 @@ def get_workflow_automaton(
 
     auto = repo.get_automaton_by_kind(id, kind)
     if not auto:
+        try:
+            from scripts.seed_db import seed_database
+            seed_database()
+            auto = repo.get_automaton_by_kind(id, kind)
+        except Exception:
+            pass
+
+    if not auto:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={

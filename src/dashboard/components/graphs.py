@@ -121,7 +121,7 @@ def render_automaton(
     )
 
     try:
-        st.graphviz_chart(styled_dot, use_container_width=True)
+        st.graphviz_chart(styled_dot, width="stretch")
     except Exception as exc:
         st.warning(
             "Graphviz rendering engine could not display the graph image directly. "

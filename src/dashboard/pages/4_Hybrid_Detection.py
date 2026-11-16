@@ -101,7 +101,7 @@ with tab_single:
     with col_m2:
         policy = st.selectbox("ML Voting Policy:", ["any", "majority", "unanimous"])
 
-    if st.button("⚡ Evaluate Hybrid Decision", type="primary", use_container_width=True):
+    if st.button("⚡ Evaluate Hybrid Decision", type="primary", width="stretch"):
         if not activities:
             st.warning("Provide at least one activity.")
         else:
@@ -116,7 +116,7 @@ with tab_single:
 
                 final_label = dec.get("final_label")
                 fsm = dec.get("fsm", {})
-                ml_scores = dec.get("ml_scores", [])
+                ml_scores = dec.get("ml", []) or dec.get("ml_scores", [])
                 explanations = dec.get("explanations", [])
 
                 # Big Decision Card
@@ -154,16 +154,15 @@ with tab_single:
                     st.markdown("#### 📈 Statistical Evidence from Evaluated Models")
                     ml_rows = [
                         {
-                            "Model ID": s.get("model_run_id"),
                             "Detector": s.get("detector"),
                             "Raw Score": f"{s.get('raw_score', 0.0):.4f}",
-                            "Normalized [0,1]": f"{s.get('normalized_score', 0.0):.4f}",
+                            "Normalized [0,1]": f"{s.get('norm_score', s.get('normalized_score', 0.0)):.4f}",
                             "Threshold": f"{s.get('threshold', 0.0):.4f}",
                             "Statistically Anomalous": "⚠️ YES" if s.get("is_anomaly") else "✅ NO",
                         }
                         for s in ml_scores
                     ]
-                    st.dataframe(pd.DataFrame(ml_rows), use_container_width=True)
+                    st.dataframe(pd.DataFrame(ml_rows), width="stretch")
 
                 # Graphviz diagram
                 dfa_spec = api.get_workflow_automaton(1, kind="DFA")
@@ -204,7 +203,7 @@ with tab_batch:
             with col_b2:
                 batch_policy = st.selectbox("ML Consensus:", ["any", "majority", "unanimous"])
 
-            submit_batch = st.form_submit_button("🚀 Run Batch Hybrid Detection", type="primary", use_container_width=True)
+            submit_batch = st.form_submit_button("🚀 Run Batch Hybrid Detection", type="primary", width="stretch")
             if submit_batch:
                 with st.spinner("Processing batch through DFA validator and active ML models..."):
                     try:
@@ -237,7 +236,7 @@ with tab_batch:
 
             if items:
                 df_results = pd.DataFrame(items)
-                st.dataframe(df_results, use_container_width=True)
+                st.dataframe(df_results, width="stretch")
 
                 # Drill-Down
                 st.markdown("#### 🔬 Case Drill-Down Inspector")
@@ -257,15 +256,23 @@ with tab_batch:
                         st.write(f"**FSM Verdict:** `{detail.get('fsm', {}).get('verdict')}`")
                         st.markdown("**Explanations:**")
                         for ex in detail.get("explanations", []):
-                            st.write(f"• {ex}")
+                            if isinstance(ex, dict):
+                                src_tag = ex.get("source", "diag").upper()
+                                st.write(f"• **[{src_tag}]** {ex.get('text', '')}")
+                            else:
+                                st.write(f"• {ex}")
 
                     with col_d2:
                         st.markdown("**ML Model Scores:**")
-                        for s in detail.get("ml_scores", []):
+                        case_ml = detail.get("ml", []) or detail.get("ml_scores", [])
+                        if not case_ml:
+                            st.caption("No statistical ML detector flagged this case.")
+                        for s in case_ml:
+                            norm_val = s.get('norm_score', s.get('normalized_score', 0.0)) or 0.0
+                            raw_val = s.get('raw_score', 0.0) or 0.0
+                            flag_tag = "⚠️ Flagged" if s.get('is_anomaly') else "✅ Normal"
                             st.write(
-                                f"• **{s.get('detector')}**: Raw={s.get('raw_score', 0):.4f}, "
-                                f"Norm={s.get('normalized_score', 0):.3f}, Thr={s.get('threshold', 0):.3f} "
-                                f"({'⚠️ Flagged' if s.get('is_anomaly') else '✅ Normal'})"
+                                f"• **{s.get('detector')}**: Raw={raw_val:.4f}, Norm={norm_val:.3f} ({flag_tag})"
                             )
 
                 st.divider()
@@ -280,7 +287,7 @@ with tab_batch:
                         data=json_data,
                         file_name=f"ps9_report_dataset_{cur_ds_id}.json",
                         mime="application/json",
-                        use_container_width=True,
+                        width="stretch",
                     )
                 with col_dl2:
                     csv_data = api.download_report_data(dataset_id=cur_ds_id, format="csv")
@@ -289,7 +296,7 @@ with tab_batch:
                         data=csv_data,
                         file_name=f"ps9_report_dataset_{cur_ds_id}.csv",
                         mime="text/csv",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
             else:

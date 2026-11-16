@@ -51,19 +51,24 @@ def seed_database(spec_path: str = "workflows/order_payment/workflow.yaml") -> N
         # Check if already seeded
         existing_wf = repo.get_by_name_and_version(name, version)
         if existing_wf is not None:
-            print(
-                f"[Seed] Workflow '{name}' v{version} already exists in database (ID: {existing_wf.workflow_id}). Skipping seed."
-            )
-            return
-
-        print(f"[Seed] Creating Workflow: '{name}' v{version}...")
-        wf = repo.create_workflow(name=name, version=version, description=desc)
+            existing_dfa = repo.get_automaton_by_kind(existing_wf.workflow_id, "DFA")
+            if existing_dfa is not None:
+                print(
+                    f"[Seed] Workflow '{name}' v{version} already exists with automata (ID: {existing_wf.workflow_id}). Skipping seed."
+                )
+                return
+            print(f"[Seed] Workflow '{name}' exists without automata. Populating automata...")
+            wf = existing_wf
+        else:
+            print(f"[Seed] Creating Workflow: '{name}' v{version}...")
+            wf = repo.create_workflow(name=name, version=version, description=desc)
 
         # 1. Add Alphabet Events
         alphabet_data = data.get("alphabet", [])
         events_to_add = [(item["code"], item["name"]) for item in alphabet_data]
-        repo.add_events(wf.workflow_id, events_to_add)
-        print(f"[Seed] Added {len(events_to_add)} workflow alphabet events.")
+        if not wf.events:
+            repo.add_events(wf.workflow_id, events_to_add)
+            print(f"[Seed] Added {len(events_to_add)} workflow alphabet events.")
 
         # Event name -> event_id lookup
         event_id_map: dict[str, int] = {}

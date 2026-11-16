@@ -67,7 +67,7 @@ with tab_upload:
         notes = st.text_area("Experiment Notes", value="Evaluating protocol handshake conformance on TCP sessions.")
         pcap_file = st.file_uploader("Upload PCAP File (`.pcap`, max 25MB)", type=["pcap", "pcapng"])
 
-        submit_pcap = st.form_submit_button("⚡ Process PCAP & Run FSM Validation", type="primary", use_container_width=True)
+        submit_pcap = st.form_submit_button("⚡ Process PCAP & Run FSM Validation", type="primary", width="stretch")
         if submit_pcap:
             if not pcap_file:
                 st.warning("Please upload a PCAP file.")
@@ -100,7 +100,7 @@ with tab_experiments:
             st.info("No PCAP experiments recorded yet. Upload a PCAP file in the **Upload & Run PCAP Experiment** tab.")
         else:
             df_exp = pd.DataFrame(exps)
-            st.dataframe(df_exp, use_container_width=True)
+            st.dataframe(df_exp, width="stretch")
 
             selected_eid = st.selectbox(
                 "Select Experiment to View Details:",
@@ -112,16 +112,22 @@ with tab_experiments:
                 e_detail = api.get_packet_experiment(selected_eid)
                 st.session_state.current_pcap_exp_id = selected_eid
 
+                raw_flows = api.get_packet_experiment_flows(selected_eid)
+                flow_items = [fl.get("flow", fl) for fl in raw_flows]
+                total_flows = len(flow_items) if flow_items else e_detail.get("flow_count", 0)
+                valid_flows = sum(1 for fl in flow_items if fl.get("verdict") == "VALID")
+                invalid_flows = total_flows - valid_flows
+                total_pkts = sum(fl.get("n_events", 0) for fl in flow_items)
+
                 st.markdown(f"#### Experiment #{selected_eid} Summary Metrics")
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Total Packets", e_detail.get("n_packets", 0))
-                c2.metric("Total Flows", e_detail.get("n_flows", 0))
-                c3.metric("FSM Valid Flows", e_detail.get("n_valid_flows", 0))
-                c4.metric("FSM Invalid Flows", e_detail.get("n_invalid_flows", 0))
+                c1.metric("Total Packets", total_pkts)
+                c2.metric("Total Flows", total_flows)
+                c3.metric("FSM Valid Flows", valid_flows)
+                c4.metric("FSM Invalid Flows", invalid_flows)
 
-                valid_flows = e_detail.get("n_valid_flows", 0)
-                total_flows = e_detail.get("n_flows", 1) or 1
-                st.progress(valid_flows / total_flows, text=f"Protocol Conformance Rate: {valid_flows / total_flows:.1%}")
+                rate = (valid_flows / total_flows) if total_flows > 0 else 0.0
+                st.progress(rate, text=f"Protocol Conformance Rate: {rate:.1%}")
 
                 st.markdown("#### Formal Inclusion Theorem")
                 st.info(
@@ -147,41 +153,59 @@ with tab_flows:
     else:
         st.markdown(f"**Viewing Flows for Experiment #{current_eid}**")
         try:
-            flows = api.get_packet_experiment_flows(current_eid)
-            if not flows:
+            raw_flows = api.get_packet_experiment_flows(current_eid)
+            if not raw_flows:
                 st.info("No flow records found for this experiment.")
             else:
-                df_flows = pd.DataFrame(flows)
-                st.dataframe(df_flows, use_container_width=True)
+                flow_items = []
+                flow_map = {}
+                for item in raw_flows:
+                    fl = item.get("flow", item)
+                    fid = fl.get("flow_id")
+                    evs = item.get("events", [])
+                    src_s = f"{fl.get('src_ip')}:{fl.get('src_port')}" if fl.get('src_ip') else "N/A"
+                    dst_s = f"{fl.get('dst_ip')}:{fl.get('dst_port')}" if fl.get('dst_ip') else "N/A"
+                    five_tuple = f"{src_s} -> {dst_s}"
+                    fl_entry = {
+                        "flow_id": fid,
+                        "5-Tuple": five_tuple,
+                        "Packets": fl.get("n_events", len(evs)),
+                        "Verdict": fl.get("verdict"),
+                        "Scenario": fl.get("scenario") or "Standard Flow",
+                    }
+                    flow_items.append(fl_entry)
+                    flow_map[fid] = {"flow": fl, "events": evs, "five_tuple": five_tuple}
+
+                st.dataframe(pd.DataFrame(flow_items), width="stretch")
 
                 st.markdown("#### 🔍 Flow Path Inspector")
                 selected_fid = st.selectbox(
                     "Choose Flow ID to inspect state transitions:",
-                    options=[f["flow_id"] for f in flows],
-                    format_func=lambda fid: next(
-                        f"Flow #{fid} | 5-Tuple: {fl.get('five_tuple')} | Verdict: {fl.get('verdict')}"
-                        for fl in flows if fl["flow_id"] == fid
-                    ),
+                    options=[f["flow_id"] for f in flow_items],
+                    format_func=lambda fid: f"Flow #{fid} | {flow_map[fid]['five_tuple']} | Verdict: {flow_map[fid]['flow'].get('verdict')}",
                 )
 
                 if selected_fid:
-                    flow_obj = next(f for f in flows if f["flow_id"] == selected_fid)
+                    selected_data = flow_map[selected_fid]
+                    flow_obj = selected_data["flow"]
+                    ev_list = selected_data["events"]
+
                     col_fl1, col_fl2 = st.columns(2)
                     with col_fl1:
                         st.markdown("**Flow Specifications:**")
-                        st.write(f"• **5-Tuple:** `{flow_obj.get('five_tuple')}`")
-                        st.write(f"• **Packets:** {flow_obj.get('packet_count')}")
-                        st.write(f"• **Duration:** {flow_obj.get('duration_sec', 0.0):.3f}s")
+                        st.write(f"• **5-Tuple:** `{selected_data['five_tuple']}`")
+                        st.write(f"• **Packets:** {flow_obj.get('n_events', len(ev_list))}")
                         st.write(f"• **FSM Verdict:** `{flow_obj.get('verdict')}`")
+                        st.write(f"• **Scenario:** `{flow_obj.get('scenario') or 'None'}`")
 
                     with col_fl2:
                         st.markdown("**Automata Path:**")
-                        st.code(f"State Path: {flow_obj.get('state_path')}")
-                        if flow_obj.get("fail_index") is not None:
-                            st.error(
-                                f"Failing packet index: {flow_obj.get('fail_index')} "
-                                f"at state '{flow_obj.get('fail_state')}' with event '{flow_obj.get('fail_event')}'"
-                            )
+                        ev_symbols = [e.get("symbol") for e in ev_list] if ev_list else []
+                        st.write(f"• **Event Symbols:** `{' -> '.join(ev_symbols) if ev_symbols else 'No events recorded'}`")
+                        if flow_obj.get("verdict") == "INVALID":
+                            st.error("TCP FSM transition violation encountered on flow stream.")
+                        else:
+                            st.success("TCP FSM conformance verified for flow stream.")
 
         except Exception as exc:
             st.error(f"Error loading flow details: {exc}")

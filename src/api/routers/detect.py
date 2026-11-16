@@ -268,6 +268,7 @@ def get_case_decision_detail(
         case_id=dec.case.case_id if dec.case else str(dec.case_pk),
         final_label=dec.final_label,
         reason_code=dec.reason_code,
+        ground_truth_label=dec.case.label_class if dec.case else None,
         fsm=fsm_info,
         ml=ml_info,
         explanations=exp_info,

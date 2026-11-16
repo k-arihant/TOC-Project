@@ -93,7 +93,7 @@ def train_model(
     # Train
     if payload.detector == "random_forest":
         labels = [1 if getattr(c, "label_class", "normal") in ("rule_violation", "statistical_anomaly") else 0 for c in ds.cases if c.split == "train"]
-        detector.fit(train_traces, labels)
+        detector.fit_supervised(train_traces, labels)
     else:
         detector.fit(train_traces)
 
@@ -239,7 +239,17 @@ def get_model_metrics(id: int, db: Session = Depends(get_db)) -> ModelMetricsRes
             score_histogram={"bins": [], "counts": []},
             roc_auc=None,
             pr_auc=None,
+            normal_scores=[],
+            anomaly_scores=[],
+            threshold=run.threshold,
         )
+
+    # Separate normal vs anomaly scores
+    normal_scores = [p.norm_score for p in predictions if getattr(p.case, "label_class", "normal") == "normal"]
+    anomaly_scores = [p.norm_score for p in predictions if getattr(p.case, "label_class", "normal") != "normal"]
+    if not normal_scores and not anomaly_scores:
+        normal_scores = [p.norm_score for p in predictions if not p.is_anomaly]
+        anomaly_scores = [p.norm_score for p in predictions if p.is_anomaly]
 
     # Build score histogram
     scores = [p.norm_score for p in predictions]
@@ -263,4 +273,7 @@ def get_model_metrics(id: int, db: Session = Depends(get_db)) -> ModelMetricsRes
         score_histogram={"bins": [float(b) for b in bin_edges], "counts": [int(c) for c in counts]},
         roc_auc=0.88,
         pr_auc=0.85,
+        normal_scores=normal_scores,
+        anomaly_scores=anomaly_scores,
+        threshold=run.threshold,
     )

@@ -56,3 +56,6 @@ class ModelMetricsResponse(BaseModel):
     score_histogram: dict[str, list[float]] = {}
     roc_auc: Optional[float] = None
     pr_auc: Optional[float] = None
+    normal_scores: list[float] = []
+    anomaly_scores: list[float] = []
+    threshold: Optional[float] = None

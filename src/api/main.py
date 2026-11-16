@@ -26,6 +26,11 @@ async def lifespan(app: FastAPI):
     """Ensure database schema tables are created upon startup if not overridden."""
     if get_db not in app.dependency_overrides:
         create_tables()
+        try:
+            from scripts.seed_db import seed_database
+            seed_database()
+        except Exception:
+            pass
     yield
 
 

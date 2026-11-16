@@ -1,7 +1,7 @@
 """Hybrid detection schemas."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -65,6 +65,7 @@ class DecisionDetailResponse(BaseModel):
     case_id: str
     final_label: str
     reason_code: str
+    ground_truth_label: Optional[str] = None
     fsm: dict[str, Any]
     ml: list[dict[str, Any]] = []
     explanations: list[dict[str, Any]] = []

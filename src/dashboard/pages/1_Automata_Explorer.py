@@ -130,7 +130,7 @@ with tab_inspector:
 
     activities = [line.strip() for line in trace_text.strip().splitlines() if line.strip()]
 
-    if st.button("🚀 Validate Trace", type="primary", use_container_width=True):
+    if st.button("🚀 Validate Trace", type="primary", width="stretch"):
         if not activities:
             st.warning("Please provide at least one activity event.")
         else:
@@ -194,7 +194,7 @@ with tab_inspector:
                             "Status": status_str,
                         }
                     )
-                st.dataframe(pd.DataFrame(steps_data), use_container_width=True)
+                st.dataframe(pd.DataFrame(steps_data), width="stretch")
 
                 # Highlighted Automaton Diagram
                 st.markdown("#### 🗺️ Path Visualisation Over Complete DFA")
@@ -236,11 +236,11 @@ with tab_dfa:
 
         st.markdown("#### State Definitions")
         df_states = pd.DataFrame(dfa_data.get("states", []))
-        st.dataframe(df_states, use_container_width=True)
+        st.dataframe(df_states, width="stretch")
 
         st.markdown("#### Complete Transition Table (Sample)")
         df_trans = pd.DataFrame(dfa_data.get("transitions", []))
-        st.dataframe(df_trans.head(30), use_container_width=True)
+        st.dataframe(df_trans.head(30), width="stretch")
 
         st.markdown("#### Visual State Diagram")
         render_automaton(dot_text=dfa_data.get("dot", ""))
@@ -269,13 +269,13 @@ with tab_nfa:
             with col_n1:
                 st.markdown("#### Subset Construction Step Table")
                 st.caption("Maps each newly formed DFA state to the corresponding subset of NFA states.")
-                st.dataframe(pd.DataFrame(step_table), use_container_width=True)
+                st.dataframe(pd.DataFrame(step_table), width="stretch")
 
             with col_n2:
                 st.markdown("#### Converted DFA Transitions")
                 st.caption(f"Start State: `{nfa_resp.get('start_state')}` | Accepting States: `{accepting_states}`")
                 df_nfa_trans = pd.DataFrame(nfa_resp.get("transitions", []))
-                st.dataframe(df_nfa_trans, use_container_width=True)
+                st.dataframe(df_nfa_trans, width="stretch")
 
         except ApiClientError as err:
             st.error(f"Subset construction failed: {err}")
@@ -306,11 +306,11 @@ with tab_min:
                 st.markdown("#### Merged Equivalence Partitions")
                 st.caption("Shows which states in the unminimised DFA collapsed into single minimal states.")
                 part_rows = [{"Minimal State": k, "Original States Merged": ", ".join(v)} for k, v in partition.items()]
-                st.dataframe(pd.DataFrame(part_rows), use_container_width=True)
+                st.dataframe(pd.DataFrame(part_rows), width="stretch")
 
             with col_p2:
                 st.markdown("#### Minimal DFA Transitions")
-                st.dataframe(pd.DataFrame(trans).head(25), use_container_width=True)
+                st.dataframe(pd.DataFrame(trans).head(25), width="stretch")
 
         except ApiClientError as err:
             st.error(f"Minimisation failed: {err}")
