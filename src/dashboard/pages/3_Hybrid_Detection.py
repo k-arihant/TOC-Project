@@ -25,6 +25,16 @@ from src.dashboard.components.provenance import render_provenance_footer
 
 api: ApiClient = st.session_state.get("api_client", ApiClient())
 
+# Auto-initialize dataset if not present in session state
+if not st.session_state.get("current_dataset_id"):
+    try:
+        datasets = api.list_datasets()
+        if datasets:
+            st.session_state.current_dataset_id = datasets[-1]["dataset_id"]
+            st.session_state.current_dataset_info = datasets[-1]
+    except Exception:
+        pass
+
 st.title("🔀 Hybrid Decision Engine & Explanations")
 st.subheader("Dual-Source Explainability Combining Formal DFA Violations with Statistical Feature Deviations")
 
@@ -83,11 +93,10 @@ with tab_single:
 
     cur_ds_id = st.session_state.get("current_dataset_id")
     available_models = []
-    if cur_ds_id:
-        try:
-            available_models = api.list_models(dataset_id=cur_ds_id)
-        except Exception:
-            pass
+    try:
+        available_models = api.list_models(dataset_id=cur_ds_id) if cur_ds_id else api.list_models()
+    except Exception:
+        pass
 
     col_m1, col_m2 = st.columns(2)
     with col_m1:
@@ -95,8 +104,8 @@ with tab_single:
         active_mids = st.multiselect(
             "Select ML models to consult:",
             options=model_options,
-            default=model_options[:2] if len(model_options) >= 2 else model_options,
-            format_func=lambda mid: next((f"#{mid} ({m['detector']})" for m in available_models if m["model_run_id"] == mid), str(mid)),
+            default=model_options if model_options else [1, 2, 3, 4],
+            format_func=lambda mid: next((f"#{mid} ({m['detector'].replace('_', ' ').title()})" for m in available_models if m["model_run_id"] == mid), f"Model #{mid}"),
         )
     with col_m2:
         policy = st.selectbox("ML Voting Policy:", ["any", "majority", "unanimous"])
