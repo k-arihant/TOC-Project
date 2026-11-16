@@ -27,12 +27,32 @@ def validate_trace(
     q = dfa.start_state
     path: List[str] = [q]
 
-    for i, raw_event in enumerate(activities):
-        # 1. Resolve event through activity map if provided
-        event = activity_map.get(raw_event, raw_event) if activity_map else raw_event
+    # Precompute a normalized lookup dict for whitespace-insensitive and case-insensitive matching
+    # e.g., "Order Created", "ordercreated", "  OrderCreated  " -> "OrderCreated"
+    norm_alphabet: Dict[str, str] = {}
+    for canonical in dfa.alphabet:
+        norm_alphabet[canonical] = canonical
+        norm_alphabet[canonical.strip()] = canonical
+        norm_alphabet[canonical.lower()] = canonical
+        norm_alphabet[canonical.lower().replace(" ", "")] = canonical
+        norm_alphabet[canonical.lower().replace("_", "")] = canonical
+        norm_alphabet[canonical.lower().replace("-", "")] = canonical
 
-        # 2. Check if event belongs to the workflow alphabet
-        if event not in dfa.alphabet:
+    for i, raw_event in enumerate(activities):
+        cleaned_raw = raw_event.strip() if isinstance(raw_event, str) else str(raw_event)
+        
+        # 1. Resolve event through activity map if provided
+        event = activity_map.get(cleaned_raw, cleaned_raw) if activity_map else cleaned_raw
+
+        # 2. Match against normalized alphabet to tolerate extra spaces or casing variations
+        if event in dfa.alphabet:
+            canonical_event = event
+        else:
+            norm_key = event.lower().replace(" ", "").replace("_", "").replace("-", "")
+            canonical_event = norm_alphabet.get(norm_key, event)
+
+        # 3. Check if event belongs to the workflow alphabet
+        if canonical_event not in dfa.alphabet:
             return FsmResult(
                 case_id=case_id,
                 verdict=FsmVerdict.INVALID,
@@ -44,7 +64,7 @@ def validate_trace(
                 reason_code="UNKNOWN_EVENT",
             )
 
-        # 3. Check for events after terminal accepting state
+        # 4. Check for events after terminal accepting state
         if q in dfa.accepting_states and not dfa.allowed_events(q):
             return FsmResult(
                 case_id=case_id,
@@ -57,8 +77,8 @@ def validate_trace(
                 reason_code="EVENT_AFTER_FINAL",
             )
 
-        # 4. Step through transition function
-        q_next = dfa.step(q, event)
+        # 5. Step through transition function
+        q_next = dfa.step(q, canonical_event)
 
         # 5. Check if transition leads to the dead/trap state
         if q_next == dfa.dead_state:

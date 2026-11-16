@@ -60,13 +60,28 @@ with tab_inspector:
     )
 
     trace_text = st.text_area(
-        "Trace Activities (enter one event per line):",
+        "Trace Activities (enter events separated by line, comma, or arrow):",
         value="OrderCreated\nPaymentInitiated\nPaymentAuthorized\nOrderPacked\nOrderShipped\nOrderDelivered\nOrderClosed",
         height=180,
-        help="Type or paste workflow events line-by-line to validate against the DFA.",
+        help="Type or paste workflow events. You can write them with spaces ('Order Created'), commas, or arrows.",
     )
 
-    activities = [line.strip() for line in trace_text.strip().splitlines() if line.strip()]
+    # Robust parsing: handles line breaks, commas, semicolons, arrows (->), and trims spaces
+    import re
+    raw_lines = trace_text.strip().splitlines()
+    raw_tokens = []
+    for line in raw_lines:
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+        # Split line by commas, semicolons, or arrows if user pasted inline
+        parts = re.split(r"[,;]|\s*->\s*", line_clean)
+        for part in parts:
+            item = part.strip()
+            if item:
+                raw_tokens.append(item)
+
+    activities = raw_tokens
 
     if st.button("🚀 Validate Trace", type="primary", width="stretch"):
         if not activities:

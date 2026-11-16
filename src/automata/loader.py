@@ -36,6 +36,21 @@ def load_workflow(path: str | Path) -> DFA:
         if code:
             code_to_name[code] = name
 
+    # Build canonical normalization mapping for flexible user input:
+    # 1. Strips leading/trailing whitespace
+    # 2. Removes spaces inside words ("Order Created" -> "OrderCreated")
+    # 3. Case-insensitive lowercase matching
+    # 4. Supports short codes ("OC" -> "OrderCreated")
+    canonical_map: Dict[str, str] = {}
+    for canonical in alphabet:
+        canonical_map[canonical.lower()] = canonical
+        canonical_map[canonical.lower().replace(" ", "")] = canonical
+        canonical_map[canonical.lower().replace("_", "")] = canonical
+        canonical_map[canonical.lower().replace("-", "")] = canonical
+    for code, canonical in code_to_name.items():
+        canonical_map[code.lower()] = canonical
+        canonical_map[code.upper()] = canonical
+
     # 2. Parse states
     state_entries = data.get("states", [])
     if not state_entries:
