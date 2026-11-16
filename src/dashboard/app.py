@@ -151,6 +151,21 @@ with col_d:
 
 st.divider()
 
+# Formal 13-State DFA Architecture Diagram
+st.markdown("### 🗺️ Formal Workflow State Machine (DFA with 13 States: $q_0 \dots q_{12}$)")
+st.write(
+    "Formal definition: $M = (Q, \\Sigma, \\delta, q_0, F)$ where "
+    "$Q = \\{q_0, q_1, \\dots, q_{12}\\}$, start state is $q_0$, and final accepting state is $F = \\{q_{12}\\}$."
+)
+
+img_path = Path(__file__).resolve().parent.parent.parent / "docs" / "images" / "dfa_13_states.png"
+if img_path.exists():
+    st.image(str(img_path), caption="Deterministic Finite Automaton (DFA) — Complete 13-State Workflow Transition Graph", width="stretch")
+else:
+    st.info("DFA diagram image is being prepared.")
+
+st.divider()
+
 # Core Concept & Duality Section
 col_left, col_right = st.columns(2)
 
