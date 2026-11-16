@@ -46,14 +46,45 @@ def analyze_single_trace(
     fsm_res = validate_trace(dfa=dfa, case_id=payload.case_id, activities=payload.activities)
 
     # 2. Score with ML detectors if provided
+    # Synthetic manual traces don't provide timestamps. If we set all timestamps to datetime.now(),
+    # the inter-event duration is 0.0000001 seconds (10 microsecond burst), which makes ML models
+    # flag it as a bot DDoS burst attack!
+    # To evaluate manual user activity traces accurately, simulate typical eCommerce processing latency gaps
+    # matching the training distribution config (simulator.yaml):
+    from datetime import timedelta
     m_repo = ModelRepository(db)
-    trace = Trace(
-        case_id=payload.case_id,
-        events=[
-            Event(case_id=payload.case_id, activity=act, timestamp=datetime.now(timezone.utc))
-            for act in payload.activities
-        ],
-    )
+    base_time = datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+    
+    pair_gaps = {
+        ("OrderCreated", "PaymentInitiated"): 60.0,
+        ("PaymentInitiated", "PaymentAuthorized"): 5.0,
+        ("PaymentInitiated", "PaymentFailed"): 5.0,
+        ("PaymentFailed", "PaymentInitiated"): 120.0,
+        ("PaymentAuthorized", "OrderPacked"): 1800.0,
+        ("OrderPacked", "OrderShipped"): 7200.0,
+        ("OrderShipped", "OrderDelivered"): 86400.0,
+        ("OrderDelivered", "OrderClosed"): 172800.0,
+        ("OrderCreated", "OrderCancelled"): 300.0,
+        ("PaymentAuthorized", "OrderCancelled"): 600.0,
+        ("OrderPacked", "OrderCancelled"): 900.0,
+        ("OrderCancelled", "RefundRequested"): 60.0,
+        ("RefundRequested", "RefundCompleted"): 43200.0,
+        ("RefundCompleted", "OrderClosed"): 3600.0,
+    }
+    
+    synthetic_events = []
+    if payload.activities:
+        synthetic_events.append(Event(case_id=payload.case_id, activity=payload.activities[0], timestamp=base_time))
+        curr_time = base_time
+        for i in range(len(payload.activities) - 1):
+            pair = (payload.activities[i], payload.activities[i+1])
+            gap = pair_gaps.get(pair, 300.0)
+            curr_time += timedelta(seconds=gap)
+            synthetic_events.append(
+                Event(case_id=payload.case_id, activity=payload.activities[i+1], timestamp=curr_time)
+            )
+    
+    trace = Trace(case_id=payload.case_id, events=synthetic_events)
 
     scores = []
     for mid in payload.model_run_ids:

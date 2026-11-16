@@ -20,8 +20,11 @@ def compute_ecdf_ranks(train_scores: np.ndarray, query_scores: np.ndarray) -> np
     train_sorted = np.sort(np.asarray(train_scores, dtype=np.float64))
     q_arr = np.asarray(query_scores, dtype=np.float64)
 
-    # searchsorted(side='right') gives count of train_scores <= q
-    ranks = np.searchsorted(train_sorted, q_arr, side="right") / float(len(train_sorted))
+    # When a query score is identical to the baseline normal training score
+    # (i.e. <= min(train_scores) or equal to modal normal value),
+    # using side='right' wrongly ranks it at the top (1.0).
+    # Using side='left' accurately ranks identical clean samples at low percentile (normal).
+    ranks = np.searchsorted(train_sorted, q_arr, side="left") / float(len(train_sorted))
     return np.clip(ranks, 0.0, 1.0).astype(np.float64)
 
 
