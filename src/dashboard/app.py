@@ -25,6 +25,23 @@ st.set_page_config(
     page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        "Get Help": None,
+        "Report a bug": None,
+        "About": None,
+    },
+)
+
+# Hide Streamlit Deploy button and default header decorations
+st.markdown(
+    """
+    <style>
+    .stDeployButton {display:none;}
+    [data-testid="stToolbar"] {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # Initialize API Client in Session State
