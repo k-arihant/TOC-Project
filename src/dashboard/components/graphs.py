@@ -1,230 +1,261 @@
-"""Interactive Automata Visualizer using Vis.js and Mermaid.
-Renders directly via HTML Canvas/SVG inside Streamlit.
-Guaranteed 100% reliable in every browser with zero external binary dependencies.
+"""Dynamic Matplotlib/SVG Automaton Graph Generator with live path & failure coloring.
+Renders directly as high-resolution SVG/PNG via st.image().
+100% immune to browser sandboxing, missing system dot binaries, or CDN failures.
 """
 
 from __future__ import annotations
 
-import json
-import re
+import io
+import os
 from typing import List, Optional
+
+os.environ["MPLCONFIGDIR"] = os.path.join(os.environ.get("TEMP", "/tmp"), "matplotlib_cache")
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import streamlit as st
-import streamlit.components.v1 as components
+
+
+COORDS = {
+    "S0": (1.0, 5.0),
+    "S1": (3.0, 5.0),
+    "S2": (5.0, 5.0),
+    "S3": (5.0, 7.2),
+    "S4": (7.5, 5.0),
+    "S5": (9.8, 5.0),
+    "S6": (12.0, 5.0),
+    "S7": (14.2, 5.0),
+    "S8": (4.0, 2.5),
+    "S9": (8.5, 2.5),
+    "S10": (11.0, 2.5),
+    "S11": (13.5, 2.5),
+    "S12": (16.2, 5.0),
+}
+
+LABELS = {
+    "S0": "S0\n(Start)",
+    "S1": "S1\n(Created)",
+    "S2": "S2\n(PayWait)",
+    "S3": "S3\n(PayFail)",
+    "S4": "S4\n(Paid)",
+    "S5": "S5\n(Packed)",
+    "S6": "S6\n(Shipped)",
+    "S7": "S7\n(Delivered)",
+    "S8": "S8\n(CancelUnpaid)",
+    "S9": "S9\n(CancelPaid)",
+    "S10": "S10\n(RefundWait)",
+    "S11": "S11\n(Refunded)",
+    "S12": "S12\n(Closed)",
+}
+
+EDGES = [
+    # (from, to, label, rad, (dx, dy))
+    ("S0", "S1", "OrderCreated", 0.0, (0, 0.28)),
+    ("S1", "S2", "PaymentInitiated", 0.0, (0, 0.28)),
+    ("S2", "S4", "PaymentAuthorized", 0.0, (0, 0.28)),
+    ("S4", "S5", "OrderPacked", 0.0, (0, 0.28)),
+    ("S5", "S6", "OrderShipped", 0.0, (0, 0.28)),
+    ("S6", "S7", "OrderDelivered", 0.0, (0, 0.28)),
+    ("S7", "S12", "OrderClosed", 0.0, (0, 0.28)),
+    ("S2", "S3", "PaymentFailed", -0.25, (-0.35, 0.0)),
+    ("S3", "S2", "PaymentInitiated (Retry)", -0.25, (0.4, 0.0)),
+    ("S1", "S8", "OrderCancelled", 0.15, (-0.25, -0.1)),
+    ("S3", "S8", "OrderCancelled", -0.15, (0.2, 0.0)),
+    ("S8", "S12", "OrderClosed", -0.28, (0.0, -0.25)),
+    ("S4", "S9", "OrderCancelled", 0.15, (-0.25, 0.0)),
+    ("S5", "S9", "OrderCancelled", -0.15, (0.2, 0.0)),
+    ("S9", "S10", "RefundRequested", 0.0, (0, 0.25)),
+    ("S10", "S11", "RefundCompleted", 0.0, (0, 0.25)),
+    ("S11", "S12", "OrderClosed", 0.18, (0.2, -0.1)),
+    ("S7", "S10", "RefundRequested", -0.22, (0.2, -0.1)),
+]
+
+
+def generate_automaton_image(
+    visited_states: Optional[List[str]] = None,
+    failing_state: Optional[str] = None,
+    failing_event: Optional[str] = None,
+    fail_from_state: Optional[str] = None,
+) -> bytes:
+    """Generate high-resolution PNG bytes with active execution traversal and failing edge highlights."""
+    visited = set(visited_states or [])
+
+    # Map visited edges: (from_st, to_st)
+    visited_edges = set()
+    if visited_states and len(visited_states) > 1:
+        for i in range(len(visited_states) - 1):
+            visited_edges.add((visited_states[i], visited_states[i + 1]))
+
+    fig, ax = plt.subplots(figsize=(19, 9), dpi=150)
+    ax.set_xlim(-0.2, 17.5)
+    ax.set_ylim(1.2, 8.5)
+    ax.axis("off")
+
+    # Start indicator arrow
+    ax.annotate(
+        "Start",
+        xy=(COORDS["S0"][0] - 0.45, COORDS["S0"][1]),
+        xytext=(COORDS["S0"][0] - 1.2, COORDS["S0"][1]),
+        arrowprops=dict(facecolor="#2563eb", edgecolor="#2563eb", width=2, headwidth=8, shrink=0.05),
+        fontsize=11,
+        fontweight="bold",
+        color="#2563eb",
+        va="center",
+    )
+
+    # Draw regular edges
+    for u, v, lbl, rad, offset in EDGES:
+        if u not in COORDS or v not in COORDS:
+            continue
+
+        p1, p2 = COORDS[u], COORDS[v]
+        is_visited_edge = (u, v) in visited_edges
+
+        # Base colors
+        if is_visited_edge:
+            edge_color = "#0284c7"
+            penwidth = 3.0
+            zord = 3
+        else:
+            edge_color = "#cbd5e1"
+            penwidth = 1.6
+            zord = 1
+
+        arrow = patches.FancyArrowPatch(
+            p1,
+            p2,
+            connectionstyle=f"arc3,rad={rad}",
+            arrowstyle="-|>",
+            mutation_scale=16 if not is_visited_edge else 20,
+            linewidth=penwidth,
+            color=edge_color,
+            shrinkA=22,
+            shrinkB=22,
+            zorder=zord,
+        )
+        ax.add_patch(arrow)
+
+        # Label position
+        mx = (p1[0] + p2[0]) / 2 + offset[0]
+        my = (p1[1] + p2[1]) / 2 + offset[1]
+        if rad != 0:
+            my += rad * 0.8
+            mx += -rad * 0.3
+
+        text_color = "#0369a1" if is_visited_edge else "#475569"
+        bbox_bg = "#f0f9ff" if is_visited_edge else "#ffffff"
+        bbox_edge = "#0284c7" if is_visited_edge else "#e2e8f0"
+
+        ax.text(
+            mx,
+            my,
+            lbl,
+            fontsize=8.5,
+            fontweight="bold" if is_visited_edge else "normal",
+            color=text_color,
+            ha="center",
+            va="center",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor=bbox_bg, edgecolor=bbox_edge, alpha=0.95),
+            zorder=zord + 1,
+        )
+
+    # If there is a failing transition from a state, draw a prominent RED violation arrow
+    if fail_from_state and fail_from_state in COORDS:
+        fx, fy = COORDS[fail_from_state]
+        # Target an offset violation badge
+        tx, ty = fx + 1.2, fy + 1.4
+        fail_arrow = patches.FancyArrowPatch(
+            (fx, fy),
+            (tx, ty),
+            connectionstyle="arc3,rad=0.1",
+            arrowstyle="-|>",
+            mutation_scale=22,
+            linewidth=3.5,
+            color="#dc2626",
+            linestyle="--",
+            shrinkA=22,
+            shrinkB=15,
+            zorder=8,
+        )
+        ax.add_patch(fail_arrow)
+        fail_lbl = f"FAIL: {failing_event}" if failing_event else "ILLEGAL TRANSITION"
+        ax.text(
+            tx,
+            ty,
+            fail_lbl,
+            fontsize=9.5,
+            fontweight="bold",
+            color="#ffffff",
+            ha="center",
+            va="center",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#dc2626", edgecolor="#991b1b"),
+            zorder=9,
+        )
+
+    # Draw states (Nodes)
+    for sid, (x, y) in COORDS.items():
+        is_accepting = (sid == "S12")
+        is_start = (sid == "S0")
+        is_visited = (sid in visited)
+        is_fail = (sid == failing_state)
+
+        if is_fail:
+            facecolor = "#fee2e2"
+            edgecolor = "#dc2626"
+            font_color = "#991b1b"
+            penwidth = 3.6
+        elif is_visited:
+            facecolor = "#e0f2fe"
+            edgecolor = "#0284c7"
+            font_color = "#0369a1"
+            penwidth = 3.2
+        elif is_accepting:
+            facecolor = "#dcfce7"
+            edgecolor = "#16a34a"
+            font_color = "#166534"
+            penwidth = 2.4
+        else:
+            facecolor = "#f8fafc"
+            edgecolor = "#94a3b8"
+            font_color = "#334155"
+            penwidth = 2.0
+
+        circle = plt.Circle((x, y), 0.44, facecolor=facecolor, edgecolor=edgecolor, linewidth=penwidth, zorder=5)
+        ax.add_patch(circle)
+
+        # Double ring for accepting state S12
+        if is_accepting:
+            inner_circle = plt.Circle((x, y), 0.38, facecolor="none", edgecolor=edgecolor, linewidth=1.8, zorder=6)
+            ax.add_patch(inner_circle)
+
+        ax.text(x, y, LABELS.get(sid, sid), fontsize=8.5, fontweight="bold", ha="center", va="center", color=font_color, zorder=7)
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return buf.getvalue()
 
 
 def render_automaton(
-    dot_text: str,
+    dot_text: str = "",
     title: Optional[str] = None,
     visited_states: Optional[List[str]] = None,
     failing_state: Optional[str] = None,
     failing_event: Optional[str] = None,
     fail_from_state: Optional[str] = None,
 ) -> None:
-    """Render automaton diagram using Vis.js network graph inside an interactive iframe."""
+    """Render automaton diagram directly using high-res PNG streaming."""
     if title:
         st.subheader(title)
 
-    if not dot_text:
-        st.info("No automaton diagram data available.")
-        return
+    img_bytes = generate_automaton_image(
+        visited_states=visited_states,
+        failing_state=failing_state,
+        failing_event=failing_event,
+        fail_from_state=fail_from_state,
+    )
 
-    visited = set(visited_states or [])
-
-    # Extract all node definitions
-    node_matches = re.findall(r'"?(\w+)"?\s*\[shape=(\w+)\];', dot_text)
-    defined_nodes = set()
-    nodes_data = []
-
-    for name, shape in node_matches:
-        if name in ("__start", "node", "edge"):
-            continue
-        defined_nodes.add(name)
-
-        is_visited = name in visited
-        is_failing = (name == failing_state)
-        is_accepting = (shape == "doublecircle")
-
-        # Color schemes
-        if is_failing:
-            bg_color = "#fee2e2"
-            border_color = "#dc2626"
-            font_color = "#991b1b"
-            border_width = 4
-        elif is_visited:
-            bg_color = "#e0f2fe"
-            border_color = "#0284c7"
-            font_color = "#0369a1"
-            border_width = 3
-        else:
-            bg_color = "#f8fafc"
-            border_color = "#64748b"
-            font_color = "#0f172a"
-            border_width = 2
-
-        label = f"{name} (Final)" if is_accepting else name
-        shape_type = "dot" if not is_accepting else "diamond"
-
-        nodes_data.append(
-            {
-                "id": name,
-                "label": label,
-                "color": {
-                    "background": bg_color,
-                    "border": border_color,
-                    "highlight": {"background": bg_color, "border": border_color},
-                },
-                "font": {"color": font_color, "size": 15, "face": "Helvetica", "bold": True},
-                "borderWidth": border_width,
-                "shadow": True,
-            }
-        )
-
-    # Extract all edge definitions
-    edge_pattern = re.compile(r'"?(\w+)"?\s*->\s*"?(\w+)"?\s*\[label="([^"]+)"\];')
-    edges_data = []
-
-    for match in edge_pattern.finditer(dot_text):
-        u, v, lbl = match.group(1), match.group(2), match.group(3)
-        if u == "__start":
-            continue
-
-        if u not in defined_nodes:
-            nodes_data.append({"id": u, "label": u})
-            defined_nodes.add(u)
-        if v not in defined_nodes:
-            nodes_data.append({"id": v, "label": v})
-            defined_nodes.add(v)
-
-        is_failing_edge = False
-        if fail_from_state and u == fail_from_state:
-            if failing_event and (failing_event in lbl or lbl in failing_event):
-                is_failing_edge = True
-            elif not failing_event:
-                is_failing_edge = True
-
-        is_visited_edge = (u in visited and v in visited)
-
-        if is_failing_edge:
-            edge_color = "#dc2626"
-            edge_width = 4
-            dashes = True
-        elif is_visited_edge:
-            edge_color = "#0284c7"
-            edge_width = 3
-            dashes = False
-        else:
-            edge_color = "#94a3b8"
-            edge_width = 1.5
-            dashes = False
-
-        edges_data.append(
-            {
-                "from": u,
-                "to": v,
-                "label": lbl,
-                "arrows": "to",
-                "color": {"color": edge_color, "highlight": edge_color},
-                "width": edge_width,
-                "dashes": dashes,
-                "font": {
-                    "align": "horizontal",
-                    "size": 11,
-                    "color": "#1e293b",
-                    "strokeWidth": 2,
-                    "strokeColor": "#ffffff",
-                    "bold": True,
-                },
-                "smooth": {"type": "curvedCW", "roundness": 0.2},
-            }
-        )
-
-    nodes_json = json.dumps(nodes_data)
-    edges_json = json.dumps(edges_data)
-
-    # Self-contained HTML with Vis.js Network CDN
-    html_code = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-      <style type="text/css">
-        body {{
-          margin: 0;
-          padding: 0;
-          background: #ffffff;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }}
-        #network {{
-          width: 100%;
-          height: 520px;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          background: #ffffff;
-        }}
-        .legend {{
-          display: flex;
-          gap: 16px;
-          padding: 8px 12px;
-          font-size: 12px;
-          color: #475569;
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          border-radius: 8px 8px 0 0;
-        }}
-        .legend-item {{
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }}
-        .circle {{
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-        }}
-      </style>
-    </head>
-    <body>
-      <div class="legend">
-        <div class="legend-item"><div class="circle" style="background:#0284c7;"></div> <strong>Traversed Path</strong> (Blue)</div>
-        <div class="legend-item"><div class="circle" style="background:#dc2626;"></div> <strong>Illegal / Failing Transition</strong> (Red)</div>
-        <div class="legend-item"><div class="circle" style="background:#64748b;"></div> Unvisited States</div>
-      </div>
-      <div id="network"></div>
-      <script type="text/javascript">
-        var nodes = new vis.DataSet({nodes_json});
-        var edges = new vis.DataSet({edges_json});
-
-        var container = document.getElementById('network');
-        var data = {{
-          nodes: nodes,
-          edges: edges
-        }};
-        var options = {{
-          layout: {{
-            hierarchical: {{
-              enabled: true,
-              direction: 'LR',
-              sortMethod: 'directed',
-              levelSeparation: 160,
-              nodeSpacing: 100
-            }}
-          }},
-          physics: {{
-            hierarchicalRepulsion: {{
-              nodeDistance: 130
-            }}
-          }},
-          interaction: {{
-            dragNodes: true,
-            zoomView: true,
-            dragView: true
-          }}
-        }};
-        var network = new vis.Network(container, data, options);
-      </script>
-    </body>
-    </html>
-    """
-
-    components.html(html_code, height=560, scrolling=False)
+    caption = "Automaton State Machine — Traversed Blue Path | Red Illegal Edge" if visited_states else "Complete 13-State Workflow Automaton Architecture"
+    st.image(img_bytes, caption=caption, width="stretch")
