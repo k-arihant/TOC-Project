@@ -187,8 +187,60 @@ with tab_dfa:
         with col_m3:
             st.metric("Total Defined Transitions", len(dfa_data.get("transitions", [])))
 
-        st.markdown("#### State Definitions")
-        df_states = pd.DataFrame(dfa_data.get("states", []))
+        st.markdown("#### State Definitions ($Q$)")
+        st.write(
+            "Formal definition of all states in the automaton: initial start state ($q_0$), "
+            "intermediate workflow states, final accepting state ($F$), and absorbing trap state."
+        )
+
+        state_meaning_map = {
+            "S0": ("Start", "Initial state before order placement"),
+            "S1": ("Created", "Order created by customer; awaiting payment initiation"),
+            "S2": ("PaymentPending", "Payment session active; awaiting gateway response"),
+            "S3": ("PaymentFailed", "Payment declined or timed out; retry loop state"),
+            "S4": ("Paid", "Payment successfully authorized and confirmed"),
+            "S5": ("Packed", "Order items packed in fulfillment warehouse"),
+            "S6": ("Shipped", "Parcel dispatched and handed over to logistics courier"),
+            "S7": ("Delivered", "Package successfully delivered to customer"),
+            "S8": ("CancelledUnpaid", "Order cancelled prior to payment completion"),
+            "S9": ("CancelledPaid", "Order cancelled after payment; eligible for refund"),
+            "S10": ("RefundPending", "Customer refund request queued for processing"),
+            "S11": ("Refunded", "Refund processed; funds credited back to customer"),
+            "S12": ("Closed", "Terminal accepting state (Order fully resolved)"),
+            "S_dead": ("Dead / Trap", "Absorbing trap state for any illegal/unpermitted transition"),
+        }
+
+        # Natural sort order: S0, S1, S2, ..., S12, S_dead
+        def state_sort_key(s_dict):
+            name = s_dict.get("name", "")
+            if name == "S_dead":
+                return 999
+            if name.startswith("S") and name[1:].isdigit():
+                return int(name[1:])
+            return 500
+
+        raw_states = dfa_data.get("states", [])
+        sorted_states = sorted(raw_states, key=state_sort_key)
+
+        enriched_states = []
+        for s in sorted_states:
+            s_name = s.get("name", "")
+            title, desc = state_meaning_map.get(s_name, ("Custom", "Workflow State"))
+            is_init = "🟢 Yes (q0)" if s.get("initial") else "No"
+            is_acc = "🎯 Yes (Final)" if s.get("accepting") else "No"
+            is_dead = "⛔ Trap State" if s.get("dead") else "Live"
+            enriched_states.append(
+                {
+                    "State ID": s_name,
+                    "Business Name": title,
+                    "Meaning in Workflow": desc,
+                    "Initial?": is_init,
+                    "Accepting (F)?": is_acc,
+                    "Type": is_dead,
+                }
+            )
+
+        df_states = pd.DataFrame(enriched_states)
         st.dataframe(df_states, width="stretch")
 
         st.markdown("#### Complete Transition Table (Sample)")
