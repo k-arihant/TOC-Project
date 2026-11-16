@@ -17,7 +17,10 @@ router = APIRouter(tags=["Workflows"])
 
 
 def _generate_dot(auto: Automaton, show_dead: bool = False) -> str:
-    """Generate Graphviz DOT string for an automaton."""
+    """Generate Graphviz DOT string for an automaton.
+    By default, hides S_dead and transitions to S_dead so that the browser
+    renders a crisp, beautiful 13-state workflow graph without 136 overlapping dead-state lines.
+    """
     start_state = next((s.state_name for s in auto.states if s.is_initial), "")
     lines = [
         "digraph Automaton {",
@@ -34,6 +37,8 @@ def _generate_dot(auto: Automaton, show_dead: bool = False) -> str:
         lines.append(f'    "{s.state_name}" [shape={shape}];')
 
     for t in auto.transitions:
+        if not show_dead and (t.to_state == "S_dead" or t.from_state == "S_dead"):
+            continue
         sym = t.event.name if t.event else "ε"
         lines.append(f'    "{t.from_state}" -> "{t.to_state}" [label="{sym}"];')
 
