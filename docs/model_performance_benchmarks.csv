@@ -1,0 +1,8 @@
+Model Architecture,Accuracy,Precision,Recall,F1-Score,False Positive Rate (FPR),ROC-AUC,Median Latency
+1. Formal FSM (TOC DFA),93.75%,100.00%,50.00%,0.6667,0.00%,0.750,0.00 ms
+2. Isolation Forest (Unsupervised),81.25%,33.33%,50.00%,0.4000,0.00%,0.607,0.12 ms
+3. Markov Sequence Model (Sequential),12.50%,12.50%,100.00%,0.2222,0.00%,0.500,0.08 ms
+4. K-Means Clustering (Centroid Distance),56.25%,22.22%,100.00%,0.3636,0.00%,0.786,0.10 ms
+5. Random Forest (Supervised Reference),62.50%,16.67%,50.00%,0.2500,0.00%,0.500,0.15 ms
+6. Average / Voting ML Ensemble,12.50%,12.50%,100.00%,0.2222,0.00%,0.500,0.20 ms
+7. Proposed Deterministic Hybrid (TOC + ML),12.50%,12.50%,100.00%,0.2222,0.00%,0.500,0.01 ms
