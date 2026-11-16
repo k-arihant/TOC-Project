@@ -1,103 +1,90 @@
-"""Graphviz diagram generator and execution path highlighter."""
+"""Mermaid diagram generator with path and failing edge highlighting.
+Provides 100% native client-side rendering inside Streamlit without requiring
+any external 'dot' binary or graphviz executable on the operating system.
+"""
 
 from __future__ import annotations
 
 import re
 from typing import List, Optional
-
 import streamlit as st
 
 
-def highlight_dot_diagram(
-    base_dot: str,
+def dot_to_mermaid(
+    dot_str: str,
     visited_states: Optional[List[str]] = None,
     failing_state: Optional[str] = None,
     failing_event: Optional[str] = None,
     fail_from_state: Optional[str] = None,
 ) -> str:
-    """Enhance Graphviz DOT text with bold blue visited paths and bold red failing edges.
-
-    Adheres strictly to Doc 09 §2:
-      - Visited states/edges: bold blue (#1f77b4, penwidth=2.5).
-      - Failing transition: red edge (#d62728, penwidth=3.0), offending state outlined in red.
-      - Unvisited states/edges: subtle grey.
-    """
-    if not base_dot:
-        return ""
-
+    """Convert Graphviz DOT string into a styled Mermaid flowchart string."""
     visited = set(visited_states or [])
-    dot_lines = base_dot.strip().splitlines()
-    highlighted_lines = []
+    lines: List[str] = ["flowchart LR"]
 
-    # Insert global styling if not present
-    for line in dot_lines:
-        trimmed = line.strip()
-        if trimmed.startswith("digraph") and "{" in trimmed:
-            highlighted_lines.append(line)
-            highlighted_lines.append('  graph [rankdir=LR, bgcolor="transparent", fontname="Helvetica"];')
-            highlighted_lines.append('  node [fontname="Helvetica", fontsize=11];')
-            highlighted_lines.append('  edge [fontname="Helvetica", fontsize=10];')
+    # Extract all node definitions
+    # e.g., "S0" [shape=circle];
+    node_matches = re.findall(r'"?(\w+)"?\s*\[shape=(\w+)\];', dot_str)
+    defined_nodes = set()
+    for name, shape in node_matches:
+        if name in ("__start", "node", "edge"):
+            continue
+        defined_nodes.add(name)
+        if shape == "doublecircle":
+            lines.append(f'    {name}((( "{name}" )))')
+        else:
+            lines.append(f'    {name}(( "{name}" ))')
+
+    # Extract all edge definitions
+    # e.g., "S0" -> "S1" [label="OrderCreated"];
+    edge_pattern = re.compile(r'"?(\w+)"?\s*->\s*"?(\w+)"?\s*\[label="([^"]+)"\];')
+    edge_index = 0
+    failing_edge_index = -1
+    visited_edge_indices = []
+
+    for match in edge_pattern.finditer(dot_str):
+        u, v, lbl = match.group(1), match.group(2), match.group(3)
+        if u == "__start":
             continue
 
-        # Check edge definition: "S0" -> "S1" [label="..."]
-        edge_match = re.search(r'^\s*"?(\w+)"?\s*->\s*"?(\w+)"?\s*(\[.*\])?', trimmed)
-        if edge_match:
-            u, v, attrs = edge_match.group(1), edge_match.group(2), edge_match.group(3) or "[]"
-            # Is this the failing transition?
-            is_failing_edge = False
-            if fail_from_state and u == fail_from_state:
-                if failing_event and failing_event in attrs:
-                    is_failing_edge = True
-                elif not failing_event:
-                    is_failing_edge = True
+        if u not in defined_nodes:
+            lines.append(f'    {u}(( "{u}" ))')
+            defined_nodes.add(u)
+        if v not in defined_nodes:
+            lines.append(f'    {v}(( "{v}" ))')
+            defined_nodes.add(v)
 
-            if is_failing_edge:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#d62728", fontcolor="#d62728", penwidth=3.2, style="bold", weight=5]'
-                )
-                highlighted_lines.append(f'  "{u}" -> "{v}" {new_attrs}')
-            elif u in visited and v in visited:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#1f77b4", fontcolor="#1f77b4", penwidth=2.5, style="bold", weight=3]'
-                )
-                highlighted_lines.append(f'  "{u}" -> "{v}" {new_attrs}')
-            else:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#cccccc", fontcolor="#888888", penwidth=1.0]'
-                )
-                highlighted_lines.append(f'  "{u}" -> "{v}" {new_attrs}')
-            continue
+        lines.append(f'    {u} -->|"{lbl}"| {v}')
 
-        # Check state node styling: "S0" [label="..."]
-        node_match = re.search(r'^\s*"?(\w+)"?\s*(\[.*\])', trimmed)
-        if node_match:
-            s_name, attrs = node_match.group(1), node_match.group(2)
-            if s_name == failing_state:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#d62728", style="filled,bold", fillcolor="#ffebee", fontcolor="#b71c1c", penwidth=3.0]'
-                )
-                highlighted_lines.append(f'  "{s_name}" {new_attrs}')
-            elif s_name in visited:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#1f77b4", style="filled,bold", fillcolor="#e3f2fd", fontcolor="#0d47a1", penwidth=2.2]'
-                )
-                highlighted_lines.append(f'  "{s_name}" {new_attrs}')
-            else:
-                new_attrs = (
-                    attrs.rstrip("]")
-                    + ', color="#b0bec5", style="filled", fillcolor="#f5f5f5", fontcolor="#546e7a"]'
-                )
-                highlighted_lines.append(f'  "{s_name}" {new_attrs}')
-            continue
+        # Check edge status
+        if fail_from_state and u == fail_from_state:
+            if failing_event and (failing_event in lbl or lbl in failing_event):
+                failing_edge_index = edge_index
+            elif not failing_event:
+                failing_edge_index = edge_index
+        elif u in visited and v in visited:
+            visited_edge_indices.append(edge_index)
 
-        highlighted_lines.append(line)
+        edge_index += 1
 
-    return "\n".join(highlighted_lines)
+    # Apply styling classes
+    # Visited states: blue outline and light blue fill
+    for s in visited:
+        if s in defined_nodes and s != failing_state:
+            lines.append(f"    style {s} fill:#e0f2fe,stroke:#0284c7,stroke-width:3px,color:#0369a1")
+
+    # Failing state: bright red outline and light red fill
+    if failing_state and failing_state in defined_nodes:
+        lines.append(f"    style {failing_state} fill:#fee2e2,stroke:#dc2626,stroke-width:4px,color:#991b1b")
+
+    # Style traversed edges: blue
+    for e_idx in visited_edge_indices:
+        lines.append(f"    linkStyle {e_idx} stroke:#0284c7,stroke-width:3px")
+
+    # Style failing edge: bright red and thicker
+    if failing_edge_index >= 0:
+        lines.append(f"    linkStyle {failing_edge_index} stroke:#dc2626,stroke-width:4px")
+
+    return "\n".join(lines)
 
 
 def render_automaton(
@@ -108,12 +95,17 @@ def render_automaton(
     failing_event: Optional[str] = None,
     fail_from_state: Optional[str] = None,
 ) -> None:
-    """Render a Graphviz automaton chart with automatic path highlighting and fallback."""
+    """Render automaton diagram using native Mermaid with interactive styling."""
     if title:
         st.subheader(title)
 
-    styled_dot = highlight_dot_diagram(
-        dot_text,
+    if not dot_text:
+        st.info("No automaton diagram data available.")
+        return
+
+    # Convert DOT to pure Mermaid
+    mermaid_code = dot_to_mermaid(
+        dot_str=dot_text,
         visited_states=visited_states,
         failing_state=failing_state,
         failing_event=failing_event,
@@ -121,11 +113,11 @@ def render_automaton(
     )
 
     try:
-        st.graphviz_chart(styled_dot, width="stretch")
+        if hasattr(st, "mermaid_chart"):
+            st.mermaid_chart(mermaid_code, width="stretch")
+        else:
+            # Fallback to markdown mermaid block
+            st.markdown(f"```mermaid\n{mermaid_code}\n```")
     except Exception as exc:
-        st.warning(
-            "Graphviz rendering engine could not display the graph image directly. "
-            "Displaying raw DOT source code below:"
-        )
-        st.code(styled_dot, language="dot")
-        st.caption(f"Engine detail: {exc}")
+        st.warning(f"Could not render diagram: {exc}")
+        st.code(mermaid_code, language="mermaid")
