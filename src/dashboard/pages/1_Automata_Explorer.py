@@ -59,73 +59,11 @@ with tab_inspector:
         "highlighting valid steps in **bold blue** and any illegal transition in **bright red**."
     )
 
-    preset_traces = {
-        "Valid Complete: Happy Path": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "OrderClosed",
-        ],
-        "Valid Complete: Payment Retry Success": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentFailed",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "OrderClosed",
-        ],
-        "Valid Complete: Return & Refund": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "RefundRequested",
-            "RefundCompleted",
-            "OrderClosed",
-        ],
-        "Valid Prefix: Order In Progress (Not Yet Closed)": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-        ],
-        "RULE VIOLATION: Premature Shipping (Skipped Payment)": [
-            "OrderCreated",
-            "OrderShipped",
-        ],
-        "RULE VIOLATION: Activity After Terminal Closed State": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "OrderClosed",
-            "OrderPacked",
-        ],
-        "RULE VIOLATION: Double Payment Authorization": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "PaymentAuthorized",
-        ],
-    }
-
-    selected_preset = st.selectbox("Choose a pre-configured scenario:", list(preset_traces.keys()))
-    default_events = "\n".join(preset_traces[selected_preset])
-
     trace_text = st.text_area(
-        "Trace Activities (one per line):",
-        value=default_events,
+        "Trace Activities (enter one event per line):",
+        value="OrderCreated\nPaymentInitiated\nPaymentAuthorized\nOrderPacked\nOrderShipped\nOrderDelivered\nOrderClosed",
         height=180,
+        help="Type or paste workflow events line-by-line to validate against the DFA.",
     )
 
     activities = [line.strip() for line in trace_text.strip().splitlines() if line.strip()]
