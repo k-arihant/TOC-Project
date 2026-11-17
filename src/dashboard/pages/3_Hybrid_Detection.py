@@ -38,7 +38,7 @@ if not st.session_state.get("current_dataset_id"):
 st.title("🔀 Hybrid Decision Engine & Explanations")
 st.subheader("Dual-Source Explainability Combining Formal DFA Violations with Statistical Feature Deviations")
 
-tab_single, tab_batch = st.tabs(["🧪 Single Trace Live Tester", "📦 Batch Split Analysis & Drill-down"])
+tab_single, tab_batch = st.tabs(["🧪 Single Trace Live Tester", "📁 CSV Upload & Batch Audit"])
 
 # =========================================================================
 # TAB 1: SINGLE TRACE LIVE TESTER
@@ -165,126 +165,191 @@ with tab_single:
 
 
 # =========================================================================
-# TAB 2: BATCH DATASET SPLIT ANALYSIS & DRILL-DOWN
+# TAB 2: CSV UPLOAD & BATCH AUDIT
 # =========================================================================
 with tab_batch:
-    st.markdown("### Batch Split Analysis & Detailed Drill-Down")
+    st.markdown("### 📁 Batch CSV Upload & Automated Audit")
     st.write(
-        "Executes end-to-end hybrid detection across all cases in a selected dataset split, "
-        "persisting decisions to the relational database and generating downloadable reports."
+        "Upload any `.csv` event log file (containing `case_id` and `activity` columns) to audit hundreds of "
+        "transactions simultaneously through both the formal DFA validator and the 4 statistical ML models."
     )
 
-    cur_ds_id = st.session_state.get("current_dataset_id")
-    if not cur_ds_id:
-        st.info("Select or generate a dataset in the sidebar first.")
-    else:
-        with st.form("batch_detect_form"):
-            col_b1, col_b2 = st.columns(2)
-            with col_b1:
-                batch_split = st.selectbox("Dataset Split:", ["test", "val", "train"])
-            with col_b2:
-                batch_policy = st.selectbox("ML Consensus:", ["any", "majority", "unanimous"])
+    col_up1, col_up2 = st.columns([2, 1])
+    with col_up1:
+        uploaded_file = st.file_uploader(
+            "Upload Transactions CSV File:",
+            type=["csv"],
+            help="CSV must contain at least 'case_id' and 'activity' columns. Optional 'timestamp' is used if provided.",
+        )
+    with col_up2:
+        st.markdown("**Or Test With Instant Demo File:**")
+        if st.button("📄 Load 100-Order Demo CSV (80 Normal, 10 Rule Breaks, 10 Anomalies)", use_container_width=True):
+            try:
+                with open("data/sample_100_transactions_for_demo.csv", "rb") as f:
+                    st.session_state.demo_csv_bytes = f.read()
+                    st.session_state.demo_csv_name = "sample_100_transactions_for_demo.csv"
+                st.success("Loaded 100-order demo file! Click 'Run Automated Audit' below.")
+            except Exception as e:
+                st.error(f"Could not load demo CSV: {e}")
 
-            submit_batch = st.form_submit_button("🚀 Run Batch Hybrid Detection", type="primary", width="stretch")
-            if submit_batch:
-                with st.spinner("Processing batch through DFA validator and active ML models..."):
-                    try:
-                        b_res = api.detect_batch(
-                            dataset_id=cur_ds_id,
-                            split=batch_split,
-                            ml_policy=batch_policy,
-                        )
-                        st.success(f"Batch completed! Processed {b_res.get('n_cases')} cases.")
-                    except ApiClientError as err:
-                        st.error(f"Batch run failed: {err}")
+    csv_source = None
+    csv_filename = "transactions.csv"
+    if uploaded_file is not None:
+        csv_source = uploaded_file
+        csv_filename = uploaded_file.name
+    elif "demo_csv_bytes" in st.session_state:
+        import io
+        csv_source = io.BytesIO(st.session_state.demo_csv_bytes)
+        csv_filename = st.session_state.get("demo_csv_name", "sample_100_transactions.csv")
+
+    if csv_source is not None:
+        try:
+            df_raw = pd.read_csv(csv_source)
+            st.caption(f"Preview of `{csv_filename}` ({len(df_raw)} events across {df_raw['case_id'].nunique() if 'case_id' in df_raw.columns else 0} cases):")
+            st.dataframe(df_raw.head(5), use_container_width=True)
+
+            if st.button("🚀 Run Automated Audit on CSV", type="primary", use_container_width=True):
+                if "case_id" not in df_raw.columns or "activity" not in df_raw.columns:
+                    st.error("CSV must contain 'case_id' and 'activity' columns.")
+                else:
+                    with st.spinner("Executing dual-pipeline audit across all transactions (Formal DFA + ML Ensemble)..."):
+                        from datetime import datetime, timezone, timedelta
+                        from src.automata.loader import load_workflow
+                        from src.automata.validator import validate_trace
+                        from src.api.routers.ml import load_detector_from_model_run
+                        from src.db.session import SessionLocal
+                        from src.db.repositories.model_repo import ModelRepository
+                        from src.hybrid.decision import decide
+                        from src.common.types import Trace, Event
+
+                        dfa = load_workflow("workflows/order_payment/workflow.yaml")
+                        with SessionLocal() as db:
+                            m_repo = ModelRepository(db)
+                            models = [load_detector_from_model_run(m_repo.get_model_run(i)) for i in [1, 2, 3, 4]]
+
+                        results_list = []
+                        counts = {"NORMAL": 0, "RULE_VIOLATION": 0, "STATISTICAL_ANOMALY": 0, "IN_PROGRESS": 0}
+
+                        pair_gaps = {
+                            ("OrderCreated", "PaymentInitiated"): 60.0,
+                            ("PaymentInitiated", "PaymentAuthorized"): 5.0,
+                            ("PaymentInitiated", "PaymentFailed"): 5.0,
+                            ("PaymentFailed", "PaymentInitiated"): 120.0,
+                            ("PaymentAuthorized", "OrderPacked"): 1800.0,
+                            ("OrderPacked", "OrderShipped"): 7200.0,
+                            ("OrderShipped", "OrderDelivered"): 86400.0,
+                            ("OrderDelivered", "OrderClosed"): 172800.0,
+                        }
+
+                        for cid, group in df_raw.groupby("case_id", sort=False):
+                            acts = group["activity"].astype(str).tolist()
+                            events = []
+                            has_ts = "timestamp" in group.columns and pd.notna(group["timestamp"].iloc[0])
+                            if has_ts:
+                                for _, row in group.iterrows():
+                                    try:
+                                        ts = datetime.fromisoformat(str(row["timestamp"]))
+                                    except Exception:
+                                        ts = datetime.now(timezone.utc)
+                                    events.append(Event(case_id=str(cid), activity=str(row["activity"]), timestamp=ts))
+                            else:
+                                # Simulate realistic eCommerce delays if timestamp not provided
+                                base_t = datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+                                events.append(Event(case_id=str(cid), activity=acts[0], timestamp=base_t))
+                                cur_t = base_t
+                                for i in range(len(acts) - 1):
+                                    gap = pair_gaps.get((acts[i], acts[i+1]), 300.0)
+                                    cur_t += timedelta(seconds=gap)
+                                    events.append(Event(case_id=str(cid), activity=acts[i+1], timestamp=cur_t))
+
+                            tr = Trace(case_id=str(cid), events=events)
+                            fsm_res = validate_trace(dfa=dfa, case_id=str(cid), activities=acts)
+                            scores = [m.score([tr])[0] for m in models]
+                            dec = decide(fsm=fsm_res, scores=scores, policy="any")
+
+                            v_label = dec.final_label.value
+                            counts[v_label] = counts.get(v_label, 0) + 1
+                            key_reason = dec.explanation[0] if dec.explanation else "Normal business execution path"
+
+                            verdict_badge = "🟢 NORMAL"
+                            if v_label == "RULE_VIOLATION":
+                                verdict_badge = "🔴 RULE VIOLATION"
+                            elif v_label == "STATISTICAL_ANOMALY":
+                                verdict_badge = "🟠 STATISTICAL ANOMALY"
+                            elif v_label == "IN_PROGRESS":
+                                verdict_badge = "🔵 IN PROGRESS"
+
+                            results_list.append({
+                                "Case ID": str(cid),
+                                "Events Count": len(acts),
+                                "Final Verdict": verdict_badge,
+                                "Raw Verdict": v_label,
+                                "Formal FSM Check": fsm_res.verdict.value,
+                                "ML Flagged": "⚠️ YES" if any(s.is_anomaly for s in scores) else "✅ NO",
+                                "Key Reason / Diagnostic": key_reason,
+                                "Sequence": " ➔ ".join(acts),
+                            })
+
+                        st.session_state.audit_results = results_list
+                        st.session_state.audit_counts = counts
+                        st.session_state.audit_total = len(results_list)
+
+        except Exception as exc:
+            st.error(f"Error parsing CSV: {exc}")
+
+    # Render Audit Results if available
+    if "audit_results" in st.session_state:
+        res_items = st.session_state.audit_results
+        c_dict = st.session_state.audit_counts
+        tot = st.session_state.audit_total
 
         st.divider()
+        st.markdown("### 📊 Executive Audit Summary")
 
-        # Decision Results Table & Filters
-        st.markdown("#### 📋 Stored Hybrid Decisions")
-        filter_label = st.selectbox(
-            "Filter Decisions by Final Label:",
-            ["All", "NORMAL", "RULE_VIOLATION", "STATISTICAL_ANOMALY", "IN_PROGRESS"],
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        with kpi1:
+            st.metric("Total Transactions", f"{tot} Cases")
+        with kpi2:
+            norm_c = c_dict.get("NORMAL", 0)
+            st.metric("🟢 Normal Process", f"{norm_c}", delta=f"{norm_c/max(1, tot)*100:.1f}% Valid", delta_color="normal")
+        with kpi3:
+            rule_c = c_dict.get("RULE_VIOLATION", 0)
+            st.metric("🔴 Rule Violations", f"{rule_c}", delta=f"{rule_c/max(1, tot)*100:.1f}% Blocked", delta_color="inverse")
+        with kpi4:
+            stat_c = c_dict.get("STATISTICAL_ANOMALY", 0)
+            st.metric("🟠 Statistical Anomalies", f"{stat_c}", delta=f"{stat_c/max(1, tot)*100:.1f}% Flagged", delta_color="inverse")
+
+        # Table & Filter
+        st.markdown("#### 📋 Detailed Transaction Audit Table")
+        filter_v = st.selectbox("Filter Decisions by Verdict:", ["All", "NORMAL", "RULE_VIOLATION", "STATISTICAL_ANOMALY", "IN_PROGRESS"])
+        
+        filtered_rows = res_items if filter_v == "All" else [r for r in res_items if r["Raw Verdict"] == filter_v]
+        st.caption(f"Showing {len(filtered_rows)} of {tot} audited transactions:")
+        
+        df_display = pd.DataFrame(filtered_rows)[["Case ID", "Events Count", "Final Verdict", "Formal FSM Check", "ML Flagged", "Key Reason / Diagnostic"]]
+        st.dataframe(df_display, use_container_width=True)
+
+        # Download Report
+        st.markdown("#### 💾 Export Audited CSV Report")
+        df_export = pd.DataFrame(res_items)
+        csv_bytes = df_export.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Download Complete Audited Report (CSV with Verdicts)",
+            data=csv_bytes,
+            file_name="audited_transactions_report.csv",
+            mime="text/csv",
+            use_container_width=True,
         )
 
-        try:
-            results_data = api.list_detect_results(
-                dataset_id=cur_ds_id,
-                final_label=filter_label if filter_label != "All" else None,
-                page_size=50,
-            )
-            items = results_data.get("items", [])
-            st.caption(f"Total matching cases: {results_data.get('pagination', {}).get('total_items', len(items))}")
-
-            if items:
-                df_results = pd.DataFrame(items)
-                st.dataframe(df_results, width="stretch")
-
-                # Drill-Down
-                st.markdown("#### 🔬 Case Drill-Down Inspector")
-                selected_case_pk = st.selectbox(
-                    "Choose Case PK to inspect in detail:",
-                    options=[item["case_pk"] for item in items],
-                    format_func=lambda pk: next((f"PK #{pk} | Case: {it.get('case_id')} | Final Label: {it.get('final_label')}" for it in items if it["case_pk"] == pk), str(pk)),
-                )
-
-                if selected_case_pk:
-                    detail = api.get_detect_result(selected_case_pk)
-                    st.caption(f"Case ID: `{detail.get('case_id')}` | Ground Truth Injected: `{detail.get('ground_truth_label')}`")
-
-                    col_d1, col_d2 = st.columns(2)
-                    with col_d1:
-                        st.info(f"**Final Verdict:** `{detail.get('final_label')}`")
-                        st.write(f"**FSM Verdict:** `{detail.get('fsm', {}).get('verdict')}`")
-                        st.markdown("**Explanations:**")
-                        for ex in detail.get("explanations", []):
-                            if isinstance(ex, dict):
-                                src_tag = ex.get("source", "diag").upper()
-                                st.write(f"• **[{src_tag}]** {ex.get('text', '')}")
-                            else:
-                                st.write(f"• {ex}")
-
-                    with col_d2:
-                        st.markdown("**ML Model Scores:**")
-                        case_ml = detail.get("ml", []) or detail.get("ml_scores", [])
-                        if not case_ml:
-                            st.caption("No statistical ML detector flagged this case.")
-                        for s in case_ml:
-                            norm_val = s.get('norm_score', s.get('normalized_score', 0.0)) or 0.0
-                            raw_val = s.get('raw_score', 0.0) or 0.0
-                            flag_tag = "⚠️ Flagged" if s.get('is_anomaly') else "✅ Normal"
-                            st.write(
-                                f"• **{s.get('detector')}**: Raw={raw_val:.4f}, Norm={norm_val:.3f} ({flag_tag})"
-                            )
-
-                st.divider()
-
-                # Report Download buttons per Doc 09 §5
-                st.markdown("#### 💾 Download Benchmark Reports")
-                col_dl1, col_dl2 = st.columns(2)
-                with col_dl1:
-                    json_data = api.download_report_data(dataset_id=cur_ds_id, format="json")
-                    st.download_button(
-                        label="📥 Download Complete Report (JSON)",
-                        data=json_data,
-                        file_name=f"ps9_report_dataset_{cur_ds_id}.json",
-                        mime="application/json",
-                        width="stretch",
-                    )
-                with col_dl2:
-                    csv_data = api.download_report_data(dataset_id=cur_ds_id, format="csv")
-                    st.download_button(
-                        label="📥 Download Summary Report (CSV)",
-                        data=csv_data,
-                        file_name=f"ps9_report_dataset_{cur_ds_id}.csv",
-                        mime="text/csv",
-                        width="stretch",
-                    )
-
-            else:
-                st.info("No hybrid decisions stored yet. Run batch detection using the form above.")
-
-        except ApiClientError as err:
-            st.error(f"Could not load results: {err}")
+        # Drill-down inspector
+        st.divider()
+        st.markdown("#### 🔬 Single Order Forensic Inspector")
+        case_options = [r["Case ID"] for r in res_items]
+        selected_cid = st.selectbox("Select Case ID to inspect full path and reasons:", options=case_options)
+        if selected_cid:
+            c_detail = next(r for r in res_items if r["Case ID"] == selected_cid)
+            st.info(f"**Case:** `{c_detail['Case ID']}` | **Verdict:** {c_detail['Final Verdict']}")
+            st.write(f"**Full Process Sequence:** `{c_detail['Sequence']}`")
+            st.write(f"**Diagnostic Explanation:** {c_detail['Key Reason / Diagnostic']}")
 
 render_provenance_footer(st.session_state.get("current_dataset_info"))
