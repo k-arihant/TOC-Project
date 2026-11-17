@@ -680,10 +680,10 @@ class ApiClient:
 
         try:
             from src.api.routers import evaluation as direct_eval
-            from src.api.schemas.evaluation import RunEvaluationRequest
+            from src.api.schemas.evaluation import EvaluationRunRequest
             from src.db.session import SessionLocal
             with SessionLocal() as db:
-                req = RunEvaluationRequest(
+                req = EvaluationRunRequest(
                     dataset_id=dataset_id,
                     split=split,
                     model_run_ids=model_run_ids or [],

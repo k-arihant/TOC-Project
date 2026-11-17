@@ -226,8 +226,8 @@ with card2:
     st.write("Generate reproducible datasets, inspect stratified splits, and train/calibrate statistical anomaly detectors.")
 
 with card3:
-    st.markdown("#### 3. [Evaluation & Benchmarks](Evaluation)")
-    st.write("Review rigorous multi-seed experimental runs comparing FSM-only vs. ML-only vs. Hybrid across Tables R1–R6.")
+    st.markdown("#### 3. [Evaluation & Benchmarks](Evaluation_and_Benchmarks)")
+    st.write("Review rigorous multi-seed experimental runs comparing individual ML models, FSM-only vs. ML-only vs. Hybrid across Tables R1–R6.")
 
 card4, card5 = st.columns(2)
 with card4:
