@@ -49,6 +49,7 @@ coverage.xml
 
 # Databases
 *.db
+!ps9.db
 *.sqlite
 *.sqlite3
 

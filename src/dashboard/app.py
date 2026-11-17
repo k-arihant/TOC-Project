@@ -152,7 +152,7 @@ with col_d:
 st.divider()
 
 # Formal 13-State DFA Architecture Diagram
-st.markdown("### 🗺️ Formal Workflow State Machine (DFA with 13 States: $q_0 \dots q_{12}$)")
+st.markdown(r"### 🗺️ Formal Workflow State Machine (DFA with 13 States: $q_0 \dots q_{12}$)")
 st.write(
     "Formal definition: $M = (Q, \\Sigma, \\delta, q_0, F)$ where "
     "$Q = \\{q_0, q_1, \\dots, q_{12}\\}$, start state is $q_0$, and final accepting state is $F = \\{q_{12}\\}$."

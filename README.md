@@ -28,11 +28,6 @@ Legend used in all docs: **[M]** mandatory · **[R]** recommended · **[E]** opt
 | 08 | [Database and API Design](08_Database_and_API_Design.md) | ER diagram, SQL schema, endpoints, environment variables |
 | 09 | [Frontend and Dashboard](09_Frontend_and_Dashboard.md) | Pages, owners, visualisations, no-fake-data rule |
 | 10 | [Team Distribution](10_Team_Distribution.md) | Solo developer operational model & historical module distribution |
-| 11 | [Development Roadmap](11_Development_Roadmap.md) | Sequential solo execution plan, phases, milestones |
-| 12 | [Testing and Evaluation](12_Testing_and_Evaluation.md) | Test strategy, evaluation protocol, empty result templates |
-| 13 | [Deployment Guide](13_Deployment_Guide.md) | Local run, Docker, hosting options |
-| 14 | [Antigravity Master Prompt](14_Antigravity_Master_Prompt.md) | Phase-by-phase build instructions for the AI coding assistant |
-| 15 | [Final Demonstration and Viva](15_Final_Demonstration_and_Viva.md) | Demo script, viva question banks |
 
 **Suggested reading order:** 01 → 02 → 04 → 05 → 06 → 03 → 08 → 09 → 10 → 11 → 12 → 07 → 13 → 14 → 15.
 

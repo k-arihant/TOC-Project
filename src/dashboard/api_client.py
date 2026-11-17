@@ -23,12 +23,42 @@ class ApiClientError(Exception):
         self.code = code
 
 
+def _ensure_backend_started():
+    """Ensure Uvicorn backend runs on localhost:8000 (essential for cloud platforms like Streamlit Cloud)."""
+    import subprocess
+    import sys
+    import time
+    import urllib.request
+
+    def is_alive():
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8000/api/v1/health", timeout=1) as r:
+                return r.status == 200
+        except Exception:
+            return False
+
+    if not is_alive():
+        try:
+            subprocess.Popen([
+                sys.executable, "-m", "uvicorn", "src.api.main:app",
+                "--host", "127.0.0.1", "--port", "8000"
+            ])
+            for _ in range(15):
+                if is_alive():
+                    break
+                time.sleep(0.5)
+        except Exception:
+            pass
+
+
 class ApiClient:
     """Client for calling PS9 FastAPI REST endpoints."""
 
     def __init__(self, base_url: Optional[str] = None, timeout: float = 15.0):
         self.base_url = (base_url or os.getenv("API_BASE_URL", "http://localhost:8000/api/v1")).rstrip("/")
         self.timeout = timeout
+        if "localhost" in self.base_url or "127.0.0.1" in self.base_url:
+            _ensure_backend_started()
 
     def _url(self, path: str) -> str:
         clean_path = path if path.startswith("/") else f"/{path}"
