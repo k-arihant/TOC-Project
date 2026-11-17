@@ -62,7 +62,11 @@ with tab_single:
     cur_ds_id = st.session_state.get("current_dataset_id")
     available_models = []
     try:
-        available_models = api.list_models(dataset_id=cur_ds_id) if cur_ds_id else api.list_models()
+        raw_models = api.list_models(dataset_id=cur_ds_id) if cur_ds_id else api.list_models()
+        unique_models = {}
+        for m in raw_models:
+            unique_models[m["detector"]] = m
+        available_models = list(unique_models.values())
     except Exception:
         pass
 

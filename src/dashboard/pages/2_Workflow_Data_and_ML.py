@@ -64,9 +64,14 @@ if run_btn:
     else:
         with st.spinner("Extracting features (144 dimensions) and running ML inference across all 4 detectors..."):
             try:
-                # Fetch available models
-                models = api.list_models()
-                model_ids = [m["model_run_id"] for m in models] if models else [1, 2, 3, 4]
+                # Fetch available models deduplicated by detector (exactly 4 algorithms)
+                cur_ds_id = st.session_state.get("current_dataset_id")
+                raw_models = api.list_models(dataset_id=cur_ds_id) if cur_ds_id else api.list_models()
+                unique_models = {}
+                for m in raw_models:
+                    unique_models[m["detector"]] = m
+                models = list(unique_models.values())
+                model_ids = [m["model_run_id"] for m in models]
 
                 # Call detection API
                 res = api.detect_analyze(
