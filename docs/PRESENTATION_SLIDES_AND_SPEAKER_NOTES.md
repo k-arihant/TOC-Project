@@ -6,9 +6,9 @@
 **Desktop Shortcut:** `C:\Users\Arihant\Desktop\TOC_PS9_Hybrid_Anomaly_Detection.pptx`  
 **Team Members:**
 - `BT24CSE153` — **Arihant Kurlikar** (*Lead Architecture & Automata Theory*)
+- `BT24CSE154` — **Vivek Pawar** (*ML Ensemble, Clustering & Threshold Calibration*)
 - `BT24CSE156` — **Akshit Meena** (*Feature Engineering & Sequential Markov Modeling*)
-- `BT24CSE177` — **Shivam Jaiswal** (*ML Ensemble, Clustering & Threshold Calibration*)
-- `BT24CSE180` — **Aditya Yadav** (*Empirical Evaluation, Benchmarking & Pipeline Integration*)
+- `BT24CSE162` — **Harshvardhan Pandey** (*Empirical Evaluation, Benchmarking & Pipeline Integration*)
 
 ---
 
@@ -20,9 +20,9 @@
 - **Subtitle:** Dual-Layer Security Combining Formal Language Automata (TOC DFA) with Statistical Machine Learning
 - **Team Roster:**
   - BT24CSE153 — Arihant Kurlikar (Lead Architecture & Automata)
+  - BT24CSE154 — Vivek Pawar (ML Ensemble & Geometric Clustering)
   - BT24CSE156 — Akshit Meena (Feature Engineering & Markov)
-  - BT24CSE177 — Shivam Jaiswal (ML Ensemble & Clustering)
-  - BT24CSE180 — Aditya Yadav (Evaluation & Testing Pipeline)
+  - BT24CSE162 — Harshvardhan Pandey (Evaluation & Testing Pipeline)
 - **Speaker Notes:**
   > "Good morning, respected professors and examiners. Today, our team presents our solution for Problem Statement #9: Hybrid Anomaly Detection in Process Workflows. In modern business infrastructures like eCommerce order-to-cash or banking pipelines, security and integrity are paramount. We demonstrate how classical theoretical computer science—specifically deterministic finite automata and regular languages—can be mathematically unified with statistical machine learning to produce an anomaly detection engine that guarantees zero false negatives with sub-millisecond execution latency."
 

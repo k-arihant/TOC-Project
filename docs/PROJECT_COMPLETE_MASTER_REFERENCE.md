@@ -6,9 +6,9 @@
 **Git Remote:** `https://github.com/k-arihant/TOC-Project.git` (Branch: `main`)  
 **Project Authors & Team Members:**
 - `BT24CSE153` — **Arihant Kurlikar** (*Lead Architecture, Automata Theory & Moore Minimization*)
+- `BT24CSE154` — **Vivek Pawar** (*ML Ensemble, Geometric Clustering & ECDF Threshold Calibration*)
 - `BT24CSE156` — **Akshit Meena** (*144-D Feature Engineering & Sequential Markov Modeling*)
-- `BT24CSE177` — **Shivam Jaiswal** (*ML Ensemble, Geometric Clustering & ECDF Threshold Calibration*)
-- `BT24CSE180` — **Aditya Yadav** (*Empirical Benchmarking, Pipeline Integration & Evaluation Pipeline*)
+- `BT24CSE162` — **Harshvardhan Pandey** (*Empirical Benchmarking, Pipeline Integration & Evaluation Pipeline*)
 
 ---
 
