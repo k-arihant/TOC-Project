@@ -67,7 +67,7 @@ with tab_single:
         pass
 
     model_options = [m["model_run_id"] for m in available_models]
-    default_mids = model_options if model_options else [1, 2, 3, 4]
+    default_mids = list(model_options)
     active_mids = default_mids
     policy = "any"
 
@@ -77,7 +77,7 @@ with tab_single:
             active_mids = st.multiselect(
                 "Select ML models to consult:",
                 options=model_options,
-                default=default_mids,
+                default=[m for m in default_mids if m in model_options],
                 format_func=lambda mid: next((f"#{mid} ({m['detector'].replace('_', ' ').title()})" for m in available_models if m["model_run_id"] == mid), f"Model #{mid}"),
             )
         with col_m2:

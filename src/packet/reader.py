@@ -2,9 +2,14 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
-from scapy.layers.inet import IP, TCP
-from scapy.layers.inet6 import IPv6
-from scapy.utils import PcapReader
+try:
+    from scapy.layers.inet import IP, TCP
+    from scapy.layers.inet6 import IPv6
+    from scapy.utils import PcapReader
+    SCAPY_AVAILABLE = True
+except ImportError:
+    IP = TCP = IPv6 = PcapReader = None
+    SCAPY_AVAILABLE = False
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,9 @@ def read_packets(
     Yields:
         PacketRecord: Extracted TCP packet metadata.
     """
+    if not SCAPY_AVAILABLE:
+        raise RuntimeError("scapy is required for PCAP parsing. Please install scapy>=2.5.0.")
+
     pcap_file = Path(path)
     if not pcap_file.exists():
         raise FileNotFoundError(f"PCAP file not found: {pcap_file}")
