@@ -174,38 +174,16 @@ with tab_batch:
         "transactions simultaneously through both the formal DFA validator and the 4 statistical ML models."
     )
 
-    col_up1, col_up2 = st.columns([2, 1])
-    with col_up1:
-        uploaded_file = st.file_uploader(
-            "Upload Transactions CSV File:",
-            type=["csv"],
-            help="CSV must contain at least 'case_id' and 'activity' columns. Optional 'timestamp' is used if provided.",
-        )
-    with col_up2:
-        st.markdown("**Or Test With Instant Demo File:**")
-        if st.button("📄 Load 100-Order Demo CSV (80 Normal, 10 Rule Breaks, 10 Anomalies)", use_container_width=True):
-            try:
-                with open("data/sample_100_transactions_for_demo.csv", "rb") as f:
-                    st.session_state.demo_csv_bytes = f.read()
-                    st.session_state.demo_csv_name = "sample_100_transactions_for_demo.csv"
-                st.success("Loaded 100-order demo file! Click 'Run Automated Audit' below.")
-            except Exception as e:
-                st.error(f"Could not load demo CSV: {e}")
+    uploaded_file = st.file_uploader(
+        "Upload Transactions CSV File:",
+        type=["csv"],
+        help="Upload an enterprise event log CSV containing 'case_id' and 'activity' columns (optional: 'timestamp').",
+    )
 
-    csv_source = None
-    csv_filename = "transactions.csv"
     if uploaded_file is not None:
-        csv_source = uploaded_file
-        csv_filename = uploaded_file.name
-    elif "demo_csv_bytes" in st.session_state:
-        import io
-        csv_source = io.BytesIO(st.session_state.demo_csv_bytes)
-        csv_filename = st.session_state.get("demo_csv_name", "sample_100_transactions.csv")
-
-    if csv_source is not None:
         try:
-            df_raw = pd.read_csv(csv_source)
-            st.caption(f"Preview of `{csv_filename}` ({len(df_raw)} events across {df_raw['case_id'].nunique() if 'case_id' in df_raw.columns else 0} cases):")
+            df_raw = pd.read_csv(uploaded_file)
+            st.caption(f"Preview of `{uploaded_file.name}` ({len(df_raw)} events across {df_raw['case_id'].nunique() if 'case_id' in df_raw.columns else 0} transactions):")
             st.dataframe(df_raw.head(5), use_container_width=True)
 
             if st.button("🚀 Run Automated Audit on CSV", type="primary", use_container_width=True):
