@@ -56,14 +56,14 @@ def analyze_single_trace(
     base_time = datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
     
     pair_gaps = {
-        ("OrderCreated", "PaymentInitiated"): 60.0,
-        ("PaymentInitiated", "PaymentAuthorized"): 5.0,
+        ("OrderCreated", "PaymentInitiated"): 5.0,
+        ("PaymentInitiated", "PaymentAuthorized"): 3600.0,
         ("PaymentInitiated", "PaymentFailed"): 5.0,
         ("PaymentFailed", "PaymentInitiated"): 120.0,
-        ("PaymentAuthorized", "OrderPacked"): 1800.0,
-        ("OrderPacked", "OrderShipped"): 7200.0,
-        ("OrderShipped", "OrderDelivered"): 86400.0,
-        ("OrderDelivered", "OrderClosed"): 172800.0,
+        ("PaymentAuthorized", "OrderPacked"): 86400.0,
+        ("OrderPacked", "OrderShipped"): 86400.0,
+        ("OrderShipped", "OrderDelivered"): 604800.0,
+        ("OrderDelivered", "OrderClosed"): 86400.0,
         ("OrderCreated", "OrderCancelled"): 300.0,
         ("PaymentAuthorized", "OrderCancelled"): 600.0,
         ("OrderPacked", "OrderCancelled"): 900.0,

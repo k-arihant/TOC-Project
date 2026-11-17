@@ -135,7 +135,7 @@ class RandomForestDetector:
         for i, trace in enumerate(traces):
             raw = float(raw_scores[i])
             norm = float(norm_scores[i])
-            is_ano = bool(norm >= self.threshold)
+            is_ano = bool(raw > 0.0 and (norm >= self.threshold if self.threshold > 0.0 else raw >= 0.5))
 
             # Factors: top 3 most important features according to tree importances
             factors: list[Factor] = []
