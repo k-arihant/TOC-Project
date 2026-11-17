@@ -50,65 +50,11 @@ with tab_single:
         "The hybrid engine outputs the definitive 4-row matrix verdict and synthesizes human-readable explanations."
     )
 
-    preset_cases = {
-        "Happy Path (Valid & Normal)": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "OrderClosed",
-        ],
-        "Syntax Violation: Jump to Delivered without Payment": [
-            "OrderCreated",
-            "OrderDelivered",
-        ],
-        "Statistical Timing Anomaly: Excessive Delay (Valid FSM)": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-            "OrderDelivered",
-            "OrderClosed",
-        ],
-        "Incomplete Prefix: Waiting for Delivery & Close": [
-            "OrderCreated",
-            "PaymentInitiated",
-            "PaymentAuthorized",
-            "OrderPacked",
-            "OrderShipped",
-        ],
-    }
-
-    st.markdown("**Quick Preset Traces (Click to load):**")
-    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
-    if "hybrid_trace_text" not in st.session_state:
-        st.session_state.hybrid_trace_text = "\n".join(preset_cases["Happy Path (Valid & Normal)"])
-
-    with b_col1:
-        if st.button("🟢 Normal Path", use_container_width=True):
-            st.session_state.hybrid_trace_text = "\n".join(preset_cases["Happy Path (Valid & Normal)"])
-            st.rerun()
-    with b_col2:
-        if st.button("🔴 Syntax Rule Break", use_container_width=True):
-            st.session_state.hybrid_trace_text = "\n".join(preset_cases["Syntax Violation: Jump to Delivered without Payment"])
-            st.rerun()
-    with b_col3:
-        if st.button("🟠 Retry Anomaly", use_container_width=True):
-            st.session_state.hybrid_trace_text = "OrderCreated\nPaymentInitiated\nPaymentFailed\nPaymentInitiated\nPaymentFailed\nPaymentInitiated\nPaymentFailed\nPaymentInitiated\nPaymentAuthorized\nOrderPacked\nOrderShipped\nOrderDelivered\nOrderClosed"
-            st.rerun()
-    with b_col4:
-        if st.button("🔵 In Progress Order", use_container_width=True):
-            st.session_state.hybrid_trace_text = "\n".join(preset_cases["Incomplete Prefix: Waiting for Delivery & Close"])
-            st.rerun()
-
     events_input = st.text_area(
         "Trace Activities (one per line, or comma-separated):",
-        value=st.session_state.hybrid_trace_text,
+        value="OrderCreated\nPaymentInitiated\nPaymentAuthorized\nOrderPacked\nOrderShipped\nOrderDelivered\nOrderClosed",
         height=180,
-        help="Type or edit transactions steps here to evaluate through the Hybrid Decision Engine.",
+        help="Type or edit transaction steps here to evaluate through the Hybrid Decision Engine.",
     )
 
     activities = [line.strip() for line in events_input.strip().splitlines() if line.strip()]
