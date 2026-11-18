@@ -189,17 +189,20 @@ class MarkovDetector:
             norm = float(norm_scores[i])
             is_ano = bool(norm >= self.threshold)
 
-            # Factors: top 3 lowest probability transitions
+            # Factors: transitions that actually contribute to the anomaly (low probability)
             trans_info = all_trans_info[i]
             sorted_trans = sorted(trans_info, key=lambda item: item[2])
             factors: list[Factor] = []
-            for u, v, p in sorted_trans[:3]:
+            low_prob_trans = [item for item in sorted_trans if item[2] < 0.20]
+            if not low_prob_trans and is_ano:
+                low_prob_trans = sorted_trans[:1]
+            for u, v, p in low_prob_trans[:3]:
                 factors.append(
                     Factor(
                         name=f"{u}->{v}",
                         value=float(p),
                         reference=0.5,  # Reference baseline
-                        note=f"Transition '{u} -> {v}' has low probability {p:.4f} in normal data",
+                        note=f"Transition '{u} -> {v}' has unusually low probability {p:.4f} in normal data",
                     )
                 )
 
