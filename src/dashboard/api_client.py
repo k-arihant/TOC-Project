@@ -539,6 +539,7 @@ class ApiClient:
         activities: List[str],
         model_run_ids: Optional[List[int]] = None,
         ml_policy: str = "any",
+        delivery_delay_days: float = 7.0,
     ) -> Dict[str, Any]:
         payload = {
             "workflow_id": workflow_id,
@@ -546,6 +547,7 @@ class ApiClient:
             "activities": activities,
             "model_run_ids": model_run_ids or [],
             "ml_policy": ml_policy,
+            "delivery_delay_days": delivery_delay_days,
         }
         if not self._direct_only:
             try:
@@ -565,6 +567,7 @@ class ApiClient:
                     activities=activities,
                     model_run_ids=model_run_ids or [],
                     ml_policy=ml_policy,
+                    delivery_delay_days=delivery_delay_days,
                 )
                 return _dump(direct_detect.analyze_single_trace(payload=req, db=db))
         except Exception as exc:

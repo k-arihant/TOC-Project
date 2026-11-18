@@ -57,6 +57,24 @@ with tab_single:
         help="Type or edit transaction steps here to evaluate through the Hybrid Decision Engine.",
     )
 
+    col_t1, col_t2 = st.columns([3, 2])
+    with col_t1:
+        delay_days = st.slider(
+            "⏱️ Simulated Carrier Transit & Delivery Dwell Time (Days):",
+            min_value=1,
+            max_value=90,
+            value=7,
+            step=1,
+            help="E-commerce baseline delivery duration is ~7 to 10 days. Values >= 80 days simulate severe real-world logistics delay to test ML dwell time sensitivity without violating DFA business rules.",
+        )
+    with col_t2:
+        st.write("")
+        st.caption("Simulation Mode:")
+        if delay_days >= 75:
+            st.warning(f"🟡 **Abnormal Dwell Delay ({delay_days}d)**: Triggers ML outlier flag while DFA passes.")
+        else:
+            st.success(f"🟢 **Normal Logistics ({delay_days}d)**: Typical fulfillment timeline.")
+
     activities = [line.strip() for line in events_input.strip().splitlines() if line.strip()]
 
     cur_ds_id = st.session_state.get("current_dataset_id")
@@ -98,6 +116,7 @@ with tab_single:
                     activities=activities,
                     model_run_ids=active_mids,
                     ml_policy=policy,
+                    delivery_delay_days=float(delay_days),
                 )
 
                 final_label = dec.get("final_label")

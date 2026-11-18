@@ -55,6 +55,9 @@ def analyze_single_trace(
     m_repo = ModelRepository(db)
     base_time = datetime(2026, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
     
+    delay_days = float(payload.delivery_delay_days) if getattr(payload, "delivery_delay_days", None) is not None else 7.0
+    shipping_gap = max(1.0, delay_days) * 86400.0
+
     pair_gaps = {
         ("OrderCreated", "PaymentInitiated"): 5.0,
         ("PaymentInitiated", "PaymentAuthorized"): 3600.0,
@@ -62,7 +65,7 @@ def analyze_single_trace(
         ("PaymentFailed", "PaymentInitiated"): 120.0,
         ("PaymentAuthorized", "OrderPacked"): 86400.0,
         ("OrderPacked", "OrderShipped"): 86400.0,
-        ("OrderShipped", "OrderDelivered"): 604800.0,
+        ("OrderShipped", "OrderDelivered"): shipping_gap,
         ("OrderDelivered", "OrderClosed"): 86400.0,
         ("OrderCreated", "OrderCancelled"): 300.0,
         ("PaymentAuthorized", "OrderCancelled"): 600.0,

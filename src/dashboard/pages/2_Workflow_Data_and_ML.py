@@ -54,6 +54,24 @@ for line in raw_lines:
         if p.strip():
             activities.append(p.strip())
 
+col_s1, col_s2 = st.columns([3, 2])
+with col_s1:
+    ml_delay_days = st.slider(
+        "⏱️ Simulated Carrier Transit & Delivery Dwell Time (Days):",
+        min_value=1,
+        max_value=90,
+        value=7,
+        step=1,
+        help="Baseline delivery duration is ~7 to 10 days. Values >= 80 days simulate severe real-world logistics delay to test ML dwell time sensitivity.",
+    )
+with col_s2:
+    st.write("")
+    st.caption("Simulation Mode:")
+    if ml_delay_days >= 75:
+        st.warning(f"🟡 **Abnormal Dwell Delay ({ml_delay_days}d)**: Extreme dwell time outlier.")
+    else:
+        st.success(f"🟢 **Normal Logistics ({ml_delay_days}d)**: Standard timeline.")
+
 col_btn1, col_btn2 = st.columns([1, 2])
 with col_btn1:
     run_btn = st.form_submit_button if False else st.button("🚀 Run All 4 ML Models", type="primary", width="stretch")
@@ -80,6 +98,7 @@ if run_btn:
                     activities=activities,
                     model_run_ids=model_ids,
                     ml_policy="any",
+                    delivery_delay_days=float(ml_delay_days),
                 )
 
                 ml_scores = res.get("ml", [])

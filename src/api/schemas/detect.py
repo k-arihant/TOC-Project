@@ -12,6 +12,7 @@ class AnalyzeTraceRequest(BaseModel):
     activities: list[str]
     model_run_ids: list[int] = []
     ml_policy: str = Field("any", description="'any' | 'all' | 'primary:<detector>'")
+    delivery_delay_days: Optional[float] = 7.0
 
 
 class FactorSchema(BaseModel):
