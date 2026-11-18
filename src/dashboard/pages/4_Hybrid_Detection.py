@@ -35,10 +35,10 @@ if not st.session_state.get("current_dataset_id"):
     except Exception:
         pass
 
-st.title("🔀 Hybrid Decision Engine & Explanations")
+st.title("Hybrid Decision Engine & Explanations")
 st.subheader("Dual-Source Explainability Combining Formal DFA Violations with Statistical Feature Deviations")
 
-tab_single, tab_batch = st.tabs(["🧪 Single Trace Live Tester", "📁 CSV Upload & Batch Audit"])
+tab_single, tab_batch = st.tabs(["Single Trace Live Tester", "CSV Upload & Batch Audit"])
 
 # =========================================================================
 # TAB 1: SINGLE TRACE LIVE TESTER
@@ -60,7 +60,7 @@ with tab_single:
     col_t1, col_t2 = st.columns([3, 2])
     with col_t1:
         delay_days = st.slider(
-            "⏱️ Simulated Carrier Transit & Delivery Dwell Time (Days):",
+            "Simulated Carrier Transit & Delivery Dwell Time (Days):",
             min_value=1,
             max_value=90,
             value=7,
@@ -71,9 +71,9 @@ with tab_single:
         st.write("")
         st.caption("Simulation Mode:")
         if delay_days >= 75:
-            st.warning(f"🟡 **Abnormal Dwell Delay ({delay_days}d)**: Triggers ML outlier flag while DFA passes.")
+            st.warning(f"**Abnormal Dwell Delay ({delay_days}d)**: Triggers ML outlier flag while DFA passes.")
         else:
-            st.success(f"🟢 **Normal Logistics ({delay_days}d)**: Typical fulfillment timeline.")
+            st.success(f"**Normal Logistics ({delay_days}d)**: Typical fulfillment timeline.")
 
     activities = [line.strip() for line in events_input.strip().splitlines() if line.strip()]
 
@@ -93,7 +93,7 @@ with tab_single:
     active_mids = default_mids
     policy = "any"
 
-    with st.expander("⚙️ Advanced Model Configuration (Optional)", expanded=False):
+    with st.expander("Advanced Model Configuration (Optional)", expanded=False):
         col_m1, col_m2 = st.columns(2)
         with col_m1:
             active_mids = st.multiselect(
@@ -105,7 +105,7 @@ with tab_single:
         with col_m2:
             policy = st.selectbox("ML Voting Policy:", ["any", "majority", "unanimous"])
 
-    if st.button("⚡ Evaluate Hybrid Decision", type="primary", width="stretch"):
+    if st.button("Evaluate Hybrid Decision", type="primary", width="stretch"):
         if not activities:
             st.warning("Provide at least one activity.")
         else:
@@ -143,7 +143,7 @@ with tab_single:
                     st.metric("ML Statistical Flag", "ANOMALOUS" if any(s.get("is_anomaly") for s in ml_scores) else "NORMAL")
 
                 # Explanations
-                st.markdown("#### 🗣️ Unified Multi-Sentence Explanations")
+                st.markdown("#### Unified Multi-Sentence Explanations")
                 for e in explanations:
                     if final_label == "RULE_VIOLATION":
                         st.error(f"• {e}")
@@ -156,14 +156,14 @@ with tab_single:
 
                 # ML Evidence Table
                 if ml_scores:
-                    st.markdown("#### 📈 Statistical Evidence from Evaluated Models")
+                    st.markdown("#### Statistical Evidence from Evaluated Models")
                     ml_rows = [
                         {
                             "Detector": s.get("detector"),
                             "Raw Score": f"{s.get('raw_score', 0.0):.4f}",
                             "Normalized [0,1]": f"{s.get('norm_score', s.get('normalized_score', 0.0)):.4f}",
                             "Threshold": f"{s.get('threshold', 0.0):.4f}",
-                            "Statistically Anomalous": "⚠️ YES" if s.get("is_anomaly") else "✅ NO",
+                            "Statistically Anomalous": "YES" if s.get("is_anomaly") else "NO",
                         }
                         for s in ml_scores
                     ]
@@ -172,7 +172,7 @@ with tab_single:
                 # Graphviz diagram
                 dfa_spec = api.get_workflow_automaton(1, kind="DFA")
                 if dfa_spec and "dot" in dfa_spec:
-                    st.markdown("#### 🗺️ Traversal Graph")
+                    st.markdown("#### Traversal Graph")
                     state_path = fsm.get("state_path", [])
                     fail_st = fsm.get("fail_state") if fsm.get("verdict") == "INVALID" else None
                     render_automaton(
@@ -191,7 +191,7 @@ with tab_single:
 # TAB 2: CSV UPLOAD & BATCH AUDIT
 # =========================================================================
 with tab_batch:
-    st.markdown("### 📁 Batch CSV Upload & Automated Audit")
+    st.markdown("### Batch CSV Upload & Automated Audit")
     st.write(
         "Upload any `.csv` event log file (containing `case_id` and `activity` columns) to audit hundreds of "
         "transactions simultaneously through both the formal DFA validator and the 4 statistical ML models."
@@ -209,7 +209,7 @@ with tab_batch:
             st.caption(f"Preview of `{uploaded_file.name}` ({len(df_raw)} events across {df_raw['case_id'].nunique() if 'case_id' in df_raw.columns else 0} transactions):")
             st.dataframe(df_raw.head(5), use_container_width=True)
 
-            if st.button("🚀 Run Automated Audit on CSV", type="primary", use_container_width=True):
+            if st.button("Run Automated Audit on CSV", type="primary", use_container_width=True):
                 if "case_id" not in df_raw.columns or "activity" not in df_raw.columns:
                     st.error("CSV must contain 'case_id' and 'activity' columns.")
                 else:
@@ -272,13 +272,13 @@ with tab_batch:
                             counts[v_label] = counts.get(v_label, 0) + 1
                             key_reason = dec.explanation[0] if dec.explanation else "Normal business execution path"
 
-                            verdict_badge = "🟢 NORMAL"
+                            verdict_badge = "NORMAL"
                             if v_label == "RULE_VIOLATION":
-                                verdict_badge = "🔴 RULE VIOLATION"
+                                verdict_badge = "RULE VIOLATION"
                             elif v_label == "STATISTICAL_ANOMALY":
-                                verdict_badge = "🟠 STATISTICAL ANOMALY"
+                                verdict_badge = "STATISTICAL ANOMALY"
                             elif v_label == "IN_PROGRESS":
-                                verdict_badge = "🔵 IN PROGRESS"
+                                verdict_badge = "IN PROGRESS"
 
                             results_list.append({
                                 "Case ID": str(cid),
@@ -286,9 +286,9 @@ with tab_batch:
                                 "Final Verdict": verdict_badge,
                                 "Raw Verdict": v_label,
                                 "Formal FSM Check": fsm_res.verdict.value,
-                                "ML Flagged": "⚠️ YES" if any(s.is_anomaly for s in scores) else "✅ NO",
+                                "ML Flagged": "YES" if any(s.is_anomaly for s in scores) else "NO",
                                 "Key Reason / Diagnostic": key_reason,
-                                "Sequence": " ➔ ".join(acts),
+                                "Sequence": " ".join(acts),
                             })
 
                         st.session_state.audit_results = results_list
@@ -305,23 +305,23 @@ with tab_batch:
         tot = st.session_state.audit_total
 
         st.divider()
-        st.markdown("### 📊 Executive Audit Summary")
+        st.markdown("### Executive Audit Summary")
 
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
         with kpi1:
             st.metric("Total Transactions", f"{tot} Cases")
         with kpi2:
             norm_c = c_dict.get("NORMAL", 0)
-            st.metric("🟢 Normal Process", f"{norm_c}", delta=f"{norm_c/max(1, tot)*100:.1f}% Valid", delta_color="normal")
+            st.metric("Normal Process", f"{norm_c}", delta=f"{norm_c/max(1, tot)*100:.1f}% Valid", delta_color="normal")
         with kpi3:
             rule_c = c_dict.get("RULE_VIOLATION", 0)
-            st.metric("🔴 Rule Violations", f"{rule_c}", delta=f"{rule_c/max(1, tot)*100:.1f}% Blocked", delta_color="inverse")
+            st.metric("Rule Violations", f"{rule_c}", delta=f"{rule_c/max(1, tot)*100:.1f}% Blocked", delta_color="inverse")
         with kpi4:
             stat_c = c_dict.get("STATISTICAL_ANOMALY", 0)
-            st.metric("🟠 Statistical Anomalies", f"{stat_c}", delta=f"{stat_c/max(1, tot)*100:.1f}% Flagged", delta_color="inverse")
+            st.metric("Statistical Anomalies", f"{stat_c}", delta=f"{stat_c/max(1, tot)*100:.1f}% Flagged", delta_color="inverse")
 
         # Table & Filter
-        st.markdown("#### 📋 Detailed Transaction Audit Table")
+        st.markdown("#### Detailed Transaction Audit Table")
         filter_v = st.selectbox("Filter Decisions by Verdict:", ["All", "NORMAL", "RULE_VIOLATION", "STATISTICAL_ANOMALY", "IN_PROGRESS"])
         
         filtered_rows = res_items if filter_v == "All" else [r for r in res_items if r["Raw Verdict"] == filter_v]
@@ -331,11 +331,11 @@ with tab_batch:
         st.dataframe(df_display, use_container_width=True)
 
         # Download Report
-        st.markdown("#### 💾 Export Audited CSV Report")
+        st.markdown("#### Export Audited CSV Report")
         df_export = pd.DataFrame(res_items)
         csv_bytes = df_export.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="📥 Download Complete Audited Report (CSV with Verdicts)",
+            label="Download Complete Audited Report (CSV with Verdicts)",
             data=csv_bytes,
             file_name="audited_transactions_report.csv",
             mime="text/csv",
@@ -344,7 +344,7 @@ with tab_batch:
 
         # Drill-down inspector
         st.divider()
-        st.markdown("#### 🔬 Single Order Forensic Inspector")
+        st.markdown("#### Single Order Forensic Inspector")
         case_options = [r["Case ID"] for r in res_items]
         selected_cid = st.selectbox("Select Case ID to inspect full path and reasons:", options=case_options)
         if selected_cid:

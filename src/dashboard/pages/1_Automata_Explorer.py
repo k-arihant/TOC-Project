@@ -25,17 +25,17 @@ from src.dashboard.components.provenance import render_provenance_footer
 
 api: ApiClient = st.session_state.get("api_client", ApiClient())
 
-st.title("🏛️ Automata Explorer")
+st.title("Automata Explorer")
 st.subheader("Formal Language Specification, State Minimisation & Trace Stepping")
 
 tab_inspector, tab_dfa, tab_nfa, tab_min, tab_reach, tab_equiv = st.tabs(
     [
-        "🔍 Trace Inspector",
-        "🌐 Base Complete DFA",
-        "🔀 Thompson NFA → DFA",
-        "📉 Moore Minimisation",
-        "🎯 State Reachability",
-        "⚖️ Language Equivalence",
+        "Trace Inspector",
+        "Base Complete DFA",
+        "Thompson NFA → DFA",
+        "Moore Minimisation",
+        "State Reachability",
+        "Language Equivalence",
     ]
 )
 
@@ -83,7 +83,7 @@ with tab_inspector:
 
     activities = raw_tokens
 
-    if st.button("🚀 Validate Trace", type="primary", width="stretch"):
+    if st.button("Validate Trace", type="primary", width="stretch"):
         if not activities:
             st.warning("Please provide at least one activity event.")
         else:
@@ -118,7 +118,7 @@ with tab_inspector:
                     st.metric("Final State Reached", state_path[-1] if state_path else "S0")
 
                 # Explanations Card
-                st.markdown("#### 📝 Diagnostic Explanations")
+                st.markdown("#### Diagnostic Explanations")
                 for exp in explanations:
                     if verdict == "INVALID":
                         st.error(f"• {exp}")
@@ -131,13 +131,13 @@ with tab_inspector:
                     st.info(f"**Permitted Events from state '{fail_state}':** `{'`, `'.join(allowed_events)}`")
 
                 # Execution Stepper Table
-                st.markdown("#### 👣 Step-by-Step State Traversal")
+                st.markdown("#### Step-by-Step State Traversal")
                 steps_data = []
                 for i, act in enumerate(activities):
                     curr_st = state_path[i] if i < len(state_path) else "Unknown"
                     next_st = state_path[i + 1] if (i + 1) < len(state_path) else "S_dead"
                     is_failed = (i == fail_idx)
-                    status_str = "❌ ILLEGAL TRANSITION" if is_failed else "✅ OK"
+                    status_str = "ILLEGAL TRANSITION" if is_failed else "OK"
                     steps_data.append(
                         {
                             "Step": i + 1,
@@ -150,7 +150,7 @@ with tab_inspector:
                 st.dataframe(pd.DataFrame(steps_data), width="stretch")
 
                 # Highlighted Automaton Diagram
-                st.markdown("#### 🗺️ Path Visualisation Over Complete DFA")
+                st.markdown("#### Path Visualisation Over Complete DFA")
                 st.caption(
                     "Blue edges represent the traversed path. A bright red edge indicates the exact invalid transition."
                 )
@@ -226,9 +226,9 @@ with tab_dfa:
         for s in sorted_states:
             s_name = s.get("name", "")
             title, desc = state_meaning_map.get(s_name, ("Custom", "Workflow State"))
-            is_init = "🟢 Yes (q0)" if s.get("initial") else "No"
-            is_acc = "🎯 Yes (Final)" if s.get("accepting") else "No"
-            is_dead = "⛔ Trap State" if s.get("dead") else "Live"
+            is_init = "Yes (q0)" if s.get("initial") else "No"
+            is_acc = "Yes (Final)" if s.get("accepting") else "No"
+            is_dead = "Trap State" if s.get("dead") else "Live"
             enriched_states.append(
                 {
                     "State ID": s_name,
@@ -261,7 +261,7 @@ with tab_nfa:
         "payment retry branches into an equivalent DFA without $\\varepsilon$-transitions."
     )
 
-    if st.button("🔄 Run Subset Construction Algorithm", type="primary"):
+    if st.button("Run Subset Construction Algorithm", type="primary"):
         try:
             nfa_resp = api.nfa_to_dfa(use_default_retry=True)
             step_table = nfa_resp.get("step_table", [])
@@ -297,7 +297,7 @@ with tab_min:
         "exhibit identical future behaviour and are merged, yielding an exact **12-state canonical minimal DFA**."
     )
 
-    if st.button("📉 Execute Moore Minimisation", type="primary"):
+    if st.button("Execute Moore Minimisation", type="primary"):
         try:
             min_resp = api.minimize_dfa(workflow_id=wf_id)
             states = min_resp.get("states", [])
@@ -330,7 +330,7 @@ with tab_reach:
         "Evaluates the topology of the DFA using forward BFS from the initial state $S_0$ and backward BFS from accepting states $F$."
     )
 
-    if st.button("🔍 Analyze Reachability"):
+    if st.button("Analyze Reachability"):
         try:
             # Automaton ID 1 is base DFA
             reach_data = api.get_reachability(automaton_id=1)
@@ -351,7 +351,7 @@ with tab_reach:
             st.markdown(f"**Useful States:** `{', '.join(sorted(useful))}`")
 
             st.info(
-                "💡 **TOC Theoretical Note:** A trap state is defined as an absorbing non-accepting state $\\delta(S_{\\text{dead}}, \\sigma) = S_{\\text{dead}}$ "
+                "**TOC Theoretical Note:** A trap state is defined as an absorbing non-accepting state $\\delta(S_{\\text{dead}}, \\sigma) = S_{\\text{dead}}$ "
                 "from which no accepting state is reachable. Its presence guarantees that the transition function $\\delta: Q \\times \\Sigma \\to Q$ is total."
             )
         except ApiClientError as err:
@@ -370,7 +370,7 @@ with tab_equiv:
 
     st.markdown("Testing Equivalence between **Base Complete DFA** and **Moore Minimized DFA**:")
 
-    if st.button("⚖️ Verify Language Equivalence", type="primary"):
+    if st.button("Verify Language Equivalence", type="primary"):
         try:
             # In test/seed DB: Automaton ID 1 is Base DFA, Automaton ID 2 is Minimized DFA
             eq_res = api.check_equivalence(automaton_id_1=1, automaton_id_2=2)
@@ -378,13 +378,13 @@ with tab_equiv:
             counterex = eq_res.get("counterexample")
 
             if is_eq:
-                st.success("🎉 **PROVEN EQUIVALENT:** $L(\\text{Base DFA}) = L(\\text{Moore Minimized DFA})$")
+                st.success("**PROVEN EQUIVALENT:** $L(\\text{Base DFA}) = L(\\text{Moore Minimized DFA})$")
                 st.info(
                     "The product automaton BFS search terminated having verified that all reachable state pairs share identical "
                     "acceptance status. Counterexample: `None`."
                 )
             else:
-                st.error("❌ **NOT EQUIVALENT:** Found counterexample trace!")
+                st.error("**NOT EQUIVALENT:** Found counterexample trace!")
                 st.code(f"Distinguishing string: {counterex}")
 
         except ApiClientError as err:

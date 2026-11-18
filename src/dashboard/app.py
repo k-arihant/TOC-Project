@@ -22,7 +22,7 @@ from src.dashboard.components.provenance import render_provenance_footer
 
 st.set_page_config(
     page_title="TOC Workflow Anomaly Detection",
-    page_icon="⚙️",
+    page_icon="PS9",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
@@ -52,27 +52,27 @@ api: ApiClient = st.session_state.api_client
 
 # ----------------- Sidebar Status & Dataset Context -----------------
 with st.sidebar:
-    st.title("⚙️ PS9 Platform")
+    st.title("PS9 Platform")
     st.caption("5th Sem Theory of Computation (TOC)")
 
     # 1. Live Health Check
     health = api.get_health()
     if health.get("status") == "ok":
-        st.success(f"🟢 **API Online** (v{health.get('version', '1.0')})")
+        st.success(f"**API Online** (v{health.get('version', '1.0')})")
         if health.get("db_connected"):
-            st.caption("💾 Database: Connected")
+            st.caption("Database: Connected")
         else:
-            st.caption("⚠️ Database: Disconnected")
+            st.caption("Database: Disconnected")
     elif health.get("status") == "degraded":
-        st.warning("🟡 **API Degraded** (DB unreachable)")
+        st.warning("**API Degraded** (DB unreachable)")
     else:
-        st.error(f"🔴 **API Disconnected**\nTarget: `{api.base_url}`")
+        st.error(f"**API Disconnected**\nTarget: `{api.base_url}`")
         st.caption("Ensure `uvicorn src.api.main:app` is running on port 8000.")
 
     st.divider()
 
     # 2. Global Dataset Context Selector
-    st.subheader("📁 Active Dataset Context")
+    st.subheader("Active Dataset Context")
     try:
         datasets = api.list_datasets()
         if datasets:
@@ -108,7 +108,7 @@ with st.sidebar:
 
 # ----------------- Main Home Page Presentation -----------------
 
-st.title("🛡️ Anomaly Detection in Process Workflows")
+st.title("Anomaly Detection in Process Workflows")
 st.subheader("Formal Automata & Machine Learning Hybrid System")
 
 st.markdown(
@@ -152,7 +152,7 @@ with col_d:
 st.divider()
 
 # Formal 13-State DFA Architecture Diagram
-st.markdown(r"### 🗺️ Formal Workflow State Machine (DFA with 13 States: $q_0 \dots q_{12}$)")
+st.markdown(r"### Formal Workflow State Machine (DFA with 13 States: $q_0 \dots q_{12}$)")
 st.write(
     "Formal definition: $M = (Q, \\Sigma, \\delta, q_0, F)$ where "
     "$Q = \\{q_0, q_1, \\dots, q_{12}\\}$, start state is $q_0$, and final accepting state is $F = \\{q_{12}\\}$."
@@ -170,7 +170,7 @@ st.divider()
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.markdown("### 🏛️ The Formal Layer (TOC Domain)")
+    st.markdown("### The Formal Layer (TOC Domain)")
     st.info(
         """
         - **Model:** Complete Deterministic Finite Automaton (DFA) with 13 states + explicit trap state ($S_{\\text{dead}}$).
@@ -186,7 +186,7 @@ with col_left:
     )
 
 with col_right:
-    st.markdown("### 🤖 The Statistical Layer (ML Domain)")
+    st.markdown("### The Statistical Layer (ML Domain)")
     st.info(
         """
         - **Model:** Feature Extractor (144 features) + Isolation Forest, 1st-Order Markov Chain, and K-Means Centroid Distance.
@@ -196,7 +196,7 @@ with col_right:
         """
     )
 
-st.markdown("### 🔀 The Deterministic Hybrid Fusion Matrix")
+st.markdown("### The Deterministic Hybrid Fusion Matrix")
 st.markdown(
     """
     Unlike black-box ensembles that produce uninterpretable blended scores, PS9 employs a **deterministic 4-row decision matrix**:
@@ -215,7 +215,7 @@ st.table(
 st.divider()
 
 # Navigation guidance
-st.markdown("### 🧭 Platform Modules (Sidebar Navigation)")
+st.markdown("### Platform Modules (Sidebar Navigation)")
 card1, card2, card3 = st.columns(3)
 with card1:
     st.markdown("#### 1. [Automata Explorer](Automata_Explorer)")

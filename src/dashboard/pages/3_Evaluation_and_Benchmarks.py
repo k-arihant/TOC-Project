@@ -31,11 +31,11 @@ api: ApiClient = st.session_state.get("api_client", ApiClient())
 
 st.set_page_config(
     page_title="Evaluation & Benchmarks | PS9",
-    page_icon="🏆",
+    page_icon="PS9",
     layout="wide",
 )
 
-st.title("🏆 Empirical Evaluation & Model Benchmarks")
+st.title("Empirical Evaluation & Model Benchmarks")
 st.subheader("Comparative Performance: Formal Automata (Gate 1) vs. 4 Machine Learning Models (Gate 2) vs. Hybrid Fusion (Gate 3)")
 
 st.markdown(
@@ -245,7 +245,7 @@ for r in ordered_runs:
 # -------------------------------------------------------------------------
 # Section 1: Benchmark Comparison Master Table
 # -------------------------------------------------------------------------
-st.markdown("### 📋 Multi-Model Benchmark Comparison (Doc 12 Table R1)")
+st.markdown("### Multi-Model Benchmark Comparison (Doc 12 Table R1)")
 st.caption("Comprehensive evaluation over 138 held-out test traces from the Kaggle Olist E-Commerce dataset.")
 
 if summary_table_rows:
@@ -275,13 +275,13 @@ st.divider()
 # -------------------------------------------------------------------------
 # Section 2: Interactive Visual Graphs
 # -------------------------------------------------------------------------
-st.markdown("### 📊 Interactive Benchmark Visualizations")
+st.markdown("### Interactive Benchmark Visualizations")
 
 tab_bar, tab_cm, tab_type, tab_lat = st.tabs([
-    "📈 Comparative Performance Bar Chart",
-    "🔲 Confusion Matrices (All Models)",
-    "🎯 Anomaly Class Breakdown (Rule vs. Dwell)",
-    "⚡ Latency vs. Accuracy Trade-Off",
+    "Comparative Performance Bar Chart",
+    "Confusion Matrices (All Models)",
+    "Anomaly Class Breakdown (Rule vs. Dwell)",
+    "Latency vs. Accuracy Trade-Off",
 ])
 
 # ----------------- Tab 1: Grouped Bar Chart -----------------
@@ -481,7 +481,7 @@ st.divider()
 # -------------------------------------------------------------------------
 # Section 3: Formal Theory & Viva Defense Insights
 # -------------------------------------------------------------------------
-with st.expander("🎓 Formal Language Theory Analysis & Viva Defense Proofs (Doc 12)", expanded=True):
+with st.expander("Formal Language Theory Analysis & Viva Defense Proofs (Doc 12)", expanded=True):
     col_t1, col_t2 = st.columns(2)
     with col_t1:
         st.markdown("#### 1. Why Pure Automata (Gate 1) Fails on Timing Delays")
@@ -525,10 +525,10 @@ with st.expander("🎓 Formal Language Theory Analysis & Viva Defense Proofs (Do
         """
         | Formal Automata (Gate 1) | ML Statistical Flag (Gate 2) | Hybrid Decision Verdict | Operational Meaning |
         | :--- | :--- | :--- | :--- |
-        | `VALID_COMPLETE` | `NORMAL` | 🟢 **NORMAL** | Order completed validly with normal business timing. |
-        | `VALID_COMPLETE` | `ANOMALOUS` | 🟡 **STATISTICAL_ANOMALY** | Syntactically allowed path, but severe delay or dwell outlier. |
-        | `INVALID` | `NORMAL` | 🔴 **RULE_VIOLATION** | Illegal transition or skipped prerequisite (caught by DFA). |
-        | `INVALID` | `ANOMALOUS` | 🚨 **CRITICAL_ANOMALY** | Grammar breach combined with abnormal statistical profile. |
+        | `VALID_COMPLETE` | `NORMAL` | **NORMAL** | Order completed validly with normal business timing. |
+        | `VALID_COMPLETE` | `ANOMALOUS` | **STATISTICAL_ANOMALY** | Syntactically allowed path, but severe delay or dwell outlier. |
+        | `INVALID` | `NORMAL` | **RULE_VIOLATION** | Illegal transition or skipped prerequisite (caught by DFA). |
+        | `INVALID` | `ANOMALOUS` | **CRITICAL_ANOMALY** | Grammar breach combined with abnormal statistical profile. |
 
         - **Formal Proof of Zero FPR:** Since legitimate business variations satisfy the formal grammar $L(G)$, the deterministic state machine guarantees syntax checks never produce false alarms on valid operations.
         - **Comprehensive Recall (94.7%):** Syntactic bypasses are stopped by Gate 1 in $O(n)$ linear time, while temporal and frequency anomalies are simultaneously detected by Gate 2.
@@ -543,7 +543,7 @@ st.divider()
 c_run, c_export = st.columns([1, 1])
 
 with c_run:
-    st.markdown("### ⚙️ Execute Fresh Evaluation Benchmark")
+    st.markdown("### Execute Fresh Evaluation Benchmark")
     with st.form("eval_benchmark_form"):
         split_choice = st.selectbox("Evaluation Split:", ["test", "val", "train"], index=0)
         consensus_choice = st.selectbox("ML Consensus Policy:", ["any", "majority", "unanimous"], index=0)
@@ -565,7 +565,7 @@ with c_run:
             ),
         )
 
-        submit_eval = st.form_submit_button("🚀 Run Comprehensive Evaluation", type="primary", use_container_width=True)
+        submit_eval = st.form_submit_button("Run Comprehensive Evaluation", type="primary", use_container_width=True)
         if submit_eval:
             with st.spinner("Scoring all test traces across FSM and ML models..."):
                 try:
@@ -575,13 +575,13 @@ with c_run:
                         model_run_ids=selected_mids,
                         ml_policy=consensus_choice,
                     )
-                    st.success("✅ Comprehensive evaluation completed and stored in database!")
+                    st.success("Comprehensive evaluation completed and stored in database!")
                     st.rerun()
                 except Exception as err:
                     st.error(f"Evaluation failed: {err}")
 
 with c_export:
-    st.markdown("### 📥 Export Benchmark Report")
+    st.markdown("### Export Benchmark Report")
     st.write("Download the comprehensive empirical benchmark results for academic submission, defense presentations, or research papers.")
 
     if summary_table_rows:
@@ -592,14 +592,14 @@ with c_export:
         json_data = json.dumps(summary_table_rows, indent=2).encode("utf-8")
 
         st.download_button(
-            label="📄 Download Benchmark Table as CSV",
+            label="Download Benchmark Table as CSV",
             data=csv_data,
             file_name="toc_ps9_benchmark_results.csv",
             mime="text/csv",
             use_container_width=True,
         )
         st.download_button(
-            label="📦 Download Full Metrics as JSON",
+            label="Download Full Metrics as JSON",
             data=json_data,
             file_name="toc_ps9_benchmark_results.json",
             mime="application/json",

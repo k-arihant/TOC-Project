@@ -25,21 +25,21 @@ from src.dashboard.components.provenance import render_provenance_footer
 
 api: ApiClient = st.session_state.get("api_client", ApiClient())
 
-st.title("🌐 Supplementary Packet Validation")
+st.title("Supplementary Packet Validation")
 st.subheader("Simplified TCP Connection State Machine Verification")
 
 # Prominent Scope & Limitations Banner per Doc 09 §1 & Doc 07
 st.warning(
-    "⚠️ **Academic Scope Disclaimer:** This is an independent, supplementary experiment (capped at 10–15% of project effort). "
+    "**Academic Scope Disclaimer:** This is an independent, supplementary experiment (capped at 10–15% of project effort). "
     "It demonstrates formal automata validation on network connection handshakes and teardowns. "
     "**It is NOT an Intrusion Detection System (IDS):** FSM-invalid $\\neq$ malicious attack, and FSM-valid $\\neq$ benign traffic."
 )
 
 tab_upload, tab_experiments, tab_flows = st.tabs(
     [
-        "📤 Upload & Run PCAP Experiment",
-        "📋 Experiment Runs & Agreement",
-        "🔬 Flow Drill-Down & TCP FSM Paths",
+        "Upload & Run PCAP Experiment",
+        "Experiment Runs & Agreement",
+        "Flow Drill-Down & TCP FSM Paths",
     ]
 )
 
@@ -67,7 +67,7 @@ with tab_upload:
         notes = st.text_area("Experiment Notes", value="Evaluating protocol handshake conformance on TCP sessions.")
         pcap_file = st.file_uploader("Upload PCAP File (`.pcap`, max 25MB)", type=["pcap", "pcapng"])
 
-        submit_pcap = st.form_submit_button("⚡ Process PCAP & Run FSM Validation", type="primary", width="stretch")
+        submit_pcap = st.form_submit_button("Process PCAP & Run FSM Validation", type="primary", width="stretch")
         if submit_pcap:
             if not pcap_file:
                 st.warning("Please upload a PCAP file.")
@@ -178,7 +178,7 @@ with tab_flows:
 
                 st.dataframe(pd.DataFrame(flow_items), width="stretch")
 
-                st.markdown("#### 🔍 Flow Path Inspector")
+                st.markdown("#### Flow Path Inspector")
                 selected_fid = st.selectbox(
                     "Choose Flow ID to inspect state transitions:",
                     options=[f["flow_id"] for f in flow_items],
@@ -211,7 +211,7 @@ with tab_flows:
             st.error(f"Error loading flow details: {exc}")
 
 st.divider()
-st.markdown("### 📋 Known Limitations & Boundary Guard (Doc 07 §5)")
+st.markdown("### Known Limitations & Boundary Guard (Doc 07 §5)")
 st.info(
     """
     1. **Not an Intrusion Detection System (IDS):** Network attacks often utilize RFC-compliant TCP handshakes. Conversely, benign packet loss, NAT retransmissions, or middlebox interference can produce out-of-order frames that violate strict FSM transitions.

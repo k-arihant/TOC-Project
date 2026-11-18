@@ -23,7 +23,7 @@ from src.dashboard.components.provenance import render_provenance_footer
 
 api: ApiClient = st.session_state.get("api_client", ApiClient())
 
-st.title("🤖 Machine Learning Anomaly Inspector")
+st.title("Machine Learning Anomaly Inspector")
 st.subheader("Multi-Algorithm Scoring: Isolation Forest, Markov, K-Means & Random Forest")
 
 st.markdown(
@@ -57,7 +57,7 @@ for line in raw_lines:
 col_s1, col_s2 = st.columns([3, 2])
 with col_s1:
     ml_delay_days = st.slider(
-        "⏱️ Simulated Carrier Transit & Delivery Dwell Time (Days):",
+        "Simulated Carrier Transit & Delivery Dwell Time (Days):",
         min_value=1,
         max_value=90,
         value=7,
@@ -68,13 +68,13 @@ with col_s2:
     st.write("")
     st.caption("Simulation Mode:")
     if ml_delay_days >= 75:
-        st.warning(f"🟡 **Abnormal Dwell Delay ({ml_delay_days}d)**: Extreme dwell time outlier.")
+        st.warning(f"**Abnormal Dwell Delay ({ml_delay_days}d)**: Extreme dwell time outlier.")
     else:
-        st.success(f"🟢 **Normal Logistics ({ml_delay_days}d)**: Standard timeline.")
+        st.success(f"**Normal Logistics ({ml_delay_days}d)**: Standard timeline.")
 
 col_btn1, col_btn2 = st.columns([1, 2])
 with col_btn1:
-    run_btn = st.form_submit_button if False else st.button("🚀 Run All 4 ML Models", type="primary", width="stretch")
+    run_btn = st.form_submit_button if False else st.button("Run All 4 ML Models", type="primary", width="stretch")
 
 if run_btn:
     if not activities:
@@ -107,17 +107,17 @@ if run_btn:
                     st.warning("No ML scores returned. Ensure models are trained.")
                 else:
                     st.divider()
-                    st.markdown("### 📊 Multi-Model Comparison Table")
+                    st.markdown("### Multi-Model Comparison Table")
 
                     score_rows = []
                     anomaly_flags = []
                     norm_scores = []
 
                     model_details = {
-                        "isolation_forest": ("🌲 Isolation Forest", "Unsupervised tree partitioning of feature space"),
-                        "markov": ("🔗 1st-Order Markov Chain", "Sequence transition log-likelihood probability"),
-                        "kmeans": ("🎯 K-Means Distance", "Centroid variance distance from normal clusters"),
-                        "random_forest": ("🌳 Random Forest", "Supervised classification reference"),
+                        "isolation_forest": ("Isolation Forest", "Unsupervised tree partitioning of feature space"),
+                        "markov": ("1st-Order Markov Chain", "Sequence transition log-likelihood probability"),
+                        "kmeans": ("K-Means Distance", "Centroid variance distance from normal clusters"),
+                        "random_forest": ("Random Forest", "Supervised classification reference"),
                     }
 
                     for s in ml_scores:
@@ -131,7 +131,7 @@ if run_btn:
                         anomaly_flags.append(is_ano)
                         norm_scores.append(norm_sc)
 
-                        verdict_badge = "🔴 ANOMALY DETECTED" if is_ano else "🟢 NORMAL"
+                        verdict_badge = "ANOMALY DETECTED" if is_ano else "NORMAL"
 
                         score_rows.append(
                             {
@@ -148,7 +148,7 @@ if run_btn:
 
                     # Ensemble Summary Cards
                     st.divider()
-                    st.markdown("### 🔀 Ensemble Aggregation (Core ML Logic)")
+                    st.markdown("### Ensemble Aggregation (Core ML Logic)")
 
                     avg_score = sum(norm_scores) / max(1, len(norm_scores))
                     n_flagged = sum(1 for f in anomaly_flags if f)
@@ -159,11 +159,11 @@ if run_btn:
                     with col_c2:
                         st.metric("Voting Consensus", f"{n_flagged} of {len(ml_scores)} Models Flagged", delta=f"{n_flagged} Flags", delta_color="inverse")
                     with col_c3:
-                        final_ml_verdict = "🔴 STATISTICAL ANOMALY" if (n_flagged >= 2 or avg_score >= 0.90) else "🟢 NORMAL PROCESS"
+                        final_ml_verdict = "STATISTICAL ANOMALY" if (n_flagged >= 2 or avg_score >= 0.90) else "NORMAL PROCESS"
                         st.metric("Aggregated ML Verdict", final_ml_verdict)
 
                     # Model Insights & Explanations
-                    st.markdown("#### 📝 Model Interpretability & Evidence")
+                    st.markdown("#### Model Interpretability & Evidence")
                     exps = res.get("explanations", [])
                     for exp in exps:
                         st.info(f"• {exp}")
@@ -174,7 +174,7 @@ if run_btn:
 st.divider()
 
 # Reference link to downloadable Kaggle CSVs and PPT benchmarks
-with st.expander("📁 Kaggle Dataset Files & Presentation Benchmarks (Click to view paths)"):
+with st.expander("Kaggle Dataset Files & Presentation Benchmarks (Click to view paths)"):
     st.markdown(
         """
         - **Kaggle Dataset Directory:** `data/kaggle_ecommerce_workflow_dataset/`
