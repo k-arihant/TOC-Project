@@ -39,10 +39,10 @@ st.title("🏆 Empirical Evaluation & Model Benchmarks")
 st.subheader("Comparative Performance: Formal Automata (Gate 1) vs. 4 Machine Learning Models (Gate 2) vs. Hybrid Fusion (Gate 3)")
 
 st.markdown(
-    r"""
+    """
     Rigorously quantifies the anomaly detection performance of each individual model on the **held-out test split**
-    (Kaggle Olist E-Commerce dataset). Validates that **Formal Automata (Gate 1)** guarantees **zero false positives ($FPR = 0.0\%$)**
-    on syntactically valid variations, while **Dual-Gate Hybrid Fusion (Gate 3)** attains the **optimal Pareto-frontier ($F1 = 94.7\%$)**
+    (Kaggle Olist E-Commerce dataset). Validates that **Formal Automata (Gate 1)** guarantees **zero false positives (FPR = 0.0%)**
+    on syntactically valid variations, while **Dual-Gate Hybrid Fusion (Gate 3)** attains the **optimal Pareto-frontier (F1 = 94.7%)**
     by catching statistical timing and dwell anomalies that bypass finite-state grammars.
     """
 )
@@ -485,38 +485,53 @@ with st.expander("🎓 Formal Language Theory Analysis & Viva Defense Proofs (Do
     col_t1, col_t2 = st.columns(2)
     with col_t1:
         st.markdown("#### 1. Why Pure Automata (Gate 1) Fails on Timing Delays")
-        st.write(
+        st.markdown(
             r"""
             - A **Deterministic Finite Automaton (DFA)** is a 5-tuple $M = (Q, \Sigma, \delta, q_0, F)$ defining membership in a regular language $L(M)$.
             - Input traces are sequences of discrete alphabet symbols $w = a_1 a_2 \dots a_k \in \Sigma^*$.
             - **Proof:** If an order undergoes a **35-day shipping delay**, but each successive event follows the valid transition function $\delta(q_i, a_j) = q_{i+1}$ and finishes in $F = \{q_{12}\}$, then by definition $\delta^*(q_0, w) \in F$.
-            - Therefore, the FSM **must** output `VALID_COMPLETE` ($Recall = 0.0\%$ on dwell delays). Finite automata have no internal clock or continuous real-valued registers to measure inter-event durations $\Delta t$.
+            - Therefore, the FSM **must** output `VALID_COMPLETE` (Recall = 0.0% on dwell delays). Finite automata have no internal clock or continuous real-valued registers to measure inter-event durations $\Delta t$.
             """
         )
 
     with col_t2:
         st.markdown("#### 2. Why Machine Learning (Gate 2) Creates False Alarms")
-        st.write(
-            r"""
+        st.markdown(
+            """
             - Statistical density estimators (Isolation Forest, K-Means) measure distance from high-density normal training clusters.
-            - Legitimate business variations (such as customers updating shipping addresses or requesting return authorizations) occur rarely ($< 2\%$ of transactions).
-            - An unsupervised statistical model marks rare points as outliers, causing **non-zero False Positive Rates ($FPR > 0\%$)**.
-            - In enterprise billing systems, a $5\%$ false positive rate equates to thousands of wrongfully blocked customer transactions.
+            - Legitimate business variations (such as customer return requests or address updates) occur rarely (< 2% of transactions).
+            - An unsupervised statistical model flags rare points as outliers, causing **non-zero False Positive Rates (FPR > 0%)**.
+            - In enterprise e-commerce systems, a 5% false positive rate equates to thousands of wrongfully blocked customer transactions.
             """
         )
 
     st.markdown("#### 3. The Dual-Gate Hybrid Advantage (Gate 3 Pareto-Optimal)")
     st.info(
-        r"""
-        The **Hybrid Decision Engine** unifies both paradigms via a 4-quadrant decision matrix:
-        $$\text{Verdict}(w) = \begin{cases}
-        \mathbf{NORMAL} & \text{if } \text{FSM}(w) = \text{VALID\_COMPLETE} \land \text{ML}(w) = \text{NORMAL} \\
-        \mathbf{STATISTICAL\_ANOMALY} & \text{if } \text{FSM}(w) = \text{VALID\_COMPLETE} \land \text{ML}(w) = \text{ANOMALOUS} \\
-        \mathbf{RULE\_VIOLATION} & \text{if } \text{FSM}(w) = \text{INVALID} \land \text{ML}(w) = \text{NORMAL} \\
-        \mathbf{CRITICAL\_ANOMALY} & \text{if } \text{FSM}(w) = \text{INVALID} \land \text{ML}(w) = \text{ANOMALOUS}
-        \end{cases}$$
-        - **Formal Proof of Zero FPR:** Since legitimate workflow variations satisfy the formal grammar, the FSM guarantees that syntax checks never produce false alarms on valid business operations.
-        - **Comprehensive Recall ($94.7\%$):** Syntactic bypasses are caught by Gate 1 ($O(n)$), while temporal and frequency anomalies are simultaneously captured by Gate 2!
+        "The **Hybrid Decision Engine** unifies both paradigms via a 4-quadrant decision matrix, "
+        "providing formal proof of **Zero False Positive Rate (FPR = 0%)** on legitimate business variations "
+        "while achieving **94.7% comprehensive recall** across all structural and timing anomalies."
+    )
+
+    st.latex(r"""
+    \text{Verdict}(w) = \begin{cases}
+    \text{NORMAL} & \text{if FSM}(w) = \text{VALID} \land \text{ML}(w) = \text{NORMAL} \\
+    \text{STATISTICAL\_ANOMALY} & \text{if FSM}(w) = \text{VALID} \land \text{ML}(w) = \text{ANOMALOUS} \\
+    \text{RULE\_VIOLATION} & \text{if FSM}(w) = \text{INVALID} \land \text{ML}(w) = \text{NORMAL} \\
+    \text{CRITICAL\_ANOMALY} & \text{if FSM}(w) = \text{INVALID} \land \text{ML}(w) = \text{ANOMALOUS}
+    \end{cases}
+    """)
+
+    st.markdown(
+        """
+        | Formal Automata (Gate 1) | ML Statistical Flag (Gate 2) | Hybrid Decision Verdict | Operational Meaning |
+        | :--- | :--- | :--- | :--- |
+        | `VALID_COMPLETE` | `NORMAL` | 🟢 **NORMAL** | Order completed validly with normal business timing. |
+        | `VALID_COMPLETE` | `ANOMALOUS` | 🟡 **STATISTICAL_ANOMALY** | Syntactically allowed path, but severe delay or dwell outlier. |
+        | `INVALID` | `NORMAL` | 🔴 **RULE_VIOLATION** | Illegal transition or skipped prerequisite (caught by DFA). |
+        | `INVALID` | `ANOMALOUS` | 🚨 **CRITICAL_ANOMALY** | Grammar breach combined with abnormal statistical profile. |
+
+        - **Formal Proof of Zero FPR:** Since legitimate business variations satisfy the formal grammar $L(G)$, the deterministic state machine guarantees syntax checks never produce false alarms on valid operations.
+        - **Comprehensive Recall (94.7%):** Syntactic bypasses are stopped by Gate 1 in $O(n)$ linear time, while temporal and frequency anomalies are simultaneously detected by Gate 2.
         """
     )
 
